@@ -96,7 +96,7 @@ def intersection(p1, p2, p3, p4):
 
     return np.array([x, y])
 
-class FrontKinematics:
+class RearKinematics:
 
     def __init__(self):
         # setup
@@ -105,7 +105,7 @@ class FrontKinematics:
         # symbolic variables (wheel and chassis coordinates)
         self.xWl, self.yWl, self.zWl, self.deltaWl, self.gammaWl, self.thetaWl = sp.symbols('xWl yWl zWl deltaWl gammaWl thetaWl')
         self.xWr, self.yWr, self.zWr, self.deltaWr, self.gammaWr, self.thetaWr = sp.symbols('xWr yWr zWr deltaWr gammaWr thetaWr')
-        self.DeltaZ, self.phi, self.deltaDriver = sp.symbols('DeltaZ phi deltaDriver')
+        self.DeltaZ, self.phi = sp.symbols('DeltaZ phi')
 
     def set_kinematic_problem(self):
         '''
@@ -125,7 +125,7 @@ class FrontKinematics:
             VehicleData = json.load(f)
         globals().update(VehicleData)
 
-        with open("FrontSuspensionPoints.json", "r", encoding="utf-8") as f:
+        with open("RearSuspensionPoints.json", "r", encoding="utf-8") as f:
                 dataKine = json.load(f)
         globals().update(dataKine)
 
@@ -183,13 +183,13 @@ class FrontKinematics:
         P2l = make_point(RFc, x2, y2, z2)
         P3l = make_point(RFc, x3, y3, z3)
         P4l = make_point(RFc, x4, y4, z4)
-        P5l = make_point(RFc, x5, y5-self.deltaDriver*rPinion, z5)
+        P5l = make_point(RFc, x5, y5, z5)
 
         P1r = make_point(RFc, x1, -y1, z1)
         P2r = make_point(RFc, x2, -y2, z2)
         P3r = make_point(RFc, x3, -y3, z3)
         P4r = make_point(RFc, x4, -y4, z4)
-        P5r = make_point(RFc, x5, -y5-self.deltaDriver*rPinion, z5)
+        P5r = make_point(RFc, x5, -y5, z5)
 
         #endregion
 
@@ -197,7 +197,6 @@ class FrontKinematics:
 
         initConf = {
             self.DeltaZ : 0,
-            self.deltaDriver : 0,
             self.phi : 0,
             self.xWl : 0,
             self.xWr : 0,
@@ -279,17 +278,15 @@ class FrontKinematics:
 
         return Phi, Points
 
-    def solve_kinematics(self, Phi, z_wheel, steering_angle):
+    def solve_kinematics(self, Phi, z_wheel):
         '''
         Given the set of equation and evaluation point returns the kinematic solution
         Phi: set of equations
-        z_wheel: z heigth of the front left wheel in respect to nominal value (m)
-        steering_angle: angle at the steering wheel (deg)
+        z_wheel: z heigth of the rear left wheel in respect to nominal value (m)
         '''
         eval_point = {
             self.DeltaZ : z_wheel,
-            self.phi : 0.0,
-            self.deltaDriver : steering_angle*np.pi/180.0
+            self.phi : 0.0
         }
 
         # setting up the problem
@@ -316,12 +313,13 @@ class FrontKinematics:
                      
 
 if __name__ == "__main__":
-    front_kine = FrontKinematics()
-    Phi, Points = front_kine.set_kinematic_problem()
-    sol = front_kine.solve_kinematics(Phi, 0.05, 0.2)
+    rear_kine = RearKinematics()
+    Phi, Points = rear_kine.set_kinematic_problem()
+    sol = rear_kine.solve_kinematics(Phi, 0.05)
     points_sub = Points.subs(sol)
     # printing all coordinates of P2l
     #print(points_sub[2,:])
+
 
     #region Evaluation sequences
     
@@ -330,45 +328,26 @@ if __name__ == "__main__":
     #Vertical wheel motion
     DeltaZmin = -0.06
     DeltaZmax = 0.06
-    #Steering angle
-    Deltamin = -110
-    Deltamax = 110
 
     xWl, yWl, zWl, deltaWl, gammaWl, thetaWl = sp.symbols('xWl yWl zWl deltaWl gammaWl thetaWl')
 
     # Sequence of z movements in the permitted range
     dofSeqZ = np.array([[DeltaZmin + (DeltaZmax - DeltaZmin) / nsteps * i, 0] for i in range(nsteps + 1)])
 
-    # Sequence of steering position in the permitted range
-    dofSeqS = np.array([[0, Deltamin + (Deltamax - Deltamin) / nsteps * i] for i in range(nsteps + 1)])
-
     #endregion
 
     #region solutions
 
-    obtainedMotionSl = np.zeros((nsteps + 1, 2), dtype=float)
     obtainedMotionZl = np.zeros((nsteps + 1, 2), dtype=float)
     for i in range(nsteps+1):
-        # steering function
-        obtainedMotionSl[i, 0] = dofSeqS[i,1]
-        solS = front_kine.solve_kinematics(Phi, dofSeqS[i,0], dofSeqS[i,1])
-        obtainedMotionSl[i, 1] = solS[deltaWl]*180.0/np.pi
         # Bump steer
         obtainedMotionZl[i, 0] = dofSeqZ[i, 0]
-        solZ = front_kine.solve_kinematics(Phi, dofSeqZ[i,0], dofSeqZ[i,1])
+        solZ = rear_kine.solve_kinematics(Phi, dofSeqZ[i,0])
         obtainedMotionZl[i, 1] = solZ[deltaWl]*180/np.pi
 
     #endregion
 
     #region Plots
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(obtainedMotionSl[:,0],obtainedMotionSl[:,1])
-    plt.xlabel("delta driver (deg)")
-    plt.ylabel("deltaWl (deg)")
-    plt.title("Steering")
-    plt.grid()
-    plt.show()
 
     plt.figure(figsize=(10, 5))
     plt.plot(obtainedMotionZl[:,0],obtainedMotionZl[:,1])
