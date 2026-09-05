@@ -132,7 +132,6 @@ def plot_markers_slider(df, step=1):
 
     plt.show()
 
-
 def plot_links(df, frame_number):
     row = df.iloc[frame_number]
 
@@ -160,7 +159,7 @@ def plot_links(df, frame_number):
             if z < z_min: z_min = z
 
     # Plotting the suspension and cassis links
-    l = 2
+    l = 1
     if not any(pd.isna([row["P1l_F_X"], row["P2l_F_X"]])):
         ax.plot([row["P1l_F_X"], row["P2l_F_X"]],
                 [row["P1l_F_Y"], row["P2l_F_Y"]],

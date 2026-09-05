@@ -14,5 +14,6 @@ df = marker_to_kinematic_points(df)
 
 # Plotting the markers in a wanted frame
 frame = 2400
-#plot_markers(df, frame)
-plot_links(df, frame)
+plot_markers(df, frame)
+#plot_links(df, frame)
+plot_markers_slider(df)

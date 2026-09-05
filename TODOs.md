@@ -14,8 +14,8 @@
 
 ## Data analysis
 
-- Compare kinematic maps
+- [ ] Compare kinematic maps
 
 ## To fix
-- Add support for other bumpsteer options for rear suspensions kinematics
-- Add reference frame for p9 -> correct the position along y
+- [ ] Add support for other bumpsteer options for rear suspensions kinematics
+- [x] Add reference frame for p9 -> correct the position along y
