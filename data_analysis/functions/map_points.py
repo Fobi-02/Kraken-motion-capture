@@ -75,11 +75,15 @@ def marker_to_kinematic_points(df):
                         [nx[2],ny[2],nz[2],row_new[f"P9l_F_Z"]],
                         [0,0,0,1]])
             # finding the new (and correct) position for P9
-            P9 = get_point(T @ translate(0, -d, 0))
+            RF_P9 = T @ translate(0, -d, 0)
+            P9 = get_point(RF_P9)
             # saving the values
             df_new.loc[df_new.index[i], "P9l_F_X"] = float(P9[0])
             df_new.loc[df_new.index[i], "P9l_F_Y"] = float(P9[1])
             df_new.loc[df_new.index[i], "P9l_F_Z"] = float(P9[2])
+            # Adding the wheel RF to the dataframe
+            df_new.loc[df_new.index[i], "P9l_F_RF"] = RF_P9
+
 
         # REAR P9
         if not pd.isna(row_new[f"P9l_R_X"]):
@@ -98,11 +102,14 @@ def marker_to_kinematic_points(df):
                         [nx[2],ny[2],nz[2],row_new[f"P9l_R_Z"]],
                         [0,0,0,1]])
             # finding the new (and correct) position for P9
-            P9 = get_point(T @ translate(0, -d, 0))
+            RF_P9 = T @ translate(0, -d, 0)
+            P9 = get_point(RF_P9)
             # saving the values
             df_new.loc[df_new.index[i], "P9l_R_X"] = float(P9[0])
             df_new.loc[df_new.index[i], "P9l_R_Y"] = float(P9[1])
             df_new.loc[df_new.index[i], "P9l_R_Z"] = float(P9[2])
+            # Adding the wheel RF to the dataframe
+            df_new.loc[df_new.index[i], "P9l_R_RF"] = RF_P9
 
 
 

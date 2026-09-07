@@ -12,18 +12,23 @@ if file_select == "F-30":
     # renaming each marker to the correct name
     df = rename_markers(df, json_file)
     # finding the kinematic points given the markers
-    #df = marker_to_kinematic_points(df)
+    df = marker_to_kinematic_points(df)
 
     # Plotting the markers in a wanted frame
     frame = 2400
-    plot_markers(df, frame)
+    #plot_markers(df, frame)
     #plot_links(df, frame)
-    #plot_markers_slider(df)
+    plot_markers_slider(df)
 
 elif file_select == "F-60":
     csv_file = "../data/F-60_001.csv"
     json_file = "../data/marker_maps/F-60map.json"
     df = read_csv(csv_file)
     df = rename_markers(df, json_file)
-    #df = marker_to_kinematic_points(df)
+    df = marker_to_kinematic_points(df)
     plot_markers(df, 0)
+
+elif file_select == "F-90":
+    csv_file = "../data/F-60_001.csv"
+    df = read_csv(csv_file)
+    plot_markers(df, 2500)

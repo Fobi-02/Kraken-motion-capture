@@ -3,9 +3,9 @@
 ## Data manipulation
 
 - [x] Function to plot the points with animations
-- [ ] Function to transform coordinates from mocap RF to vehicle RF
-- [ ] Minimization to associate all static (chassis) kinematic points
-- [ ] Function to compensate for missing data of certain points
+- [ ] Use chassis points to rototranslate the chsssis in the correct RF (using model points) - Zano
+- [ ] Add wheel reference frame - Fede
+- [ ] Correct missing kinematic points
 - [ ] Maps to assign two mocap points to a single suspension link with the correct name (2/17)
         - Use plot_markers to associate the names at frame 0
         - Check if they are all present from the name of the columns of the csv file
@@ -13,13 +13,15 @@
         - Pay attention to the steering markers (+ clockwise rotation, - counterclockwise rotation)
 - [x] Function to transform df based on maps
 - [x] Function to plot the chassis with links
-- [ ] Function to read the steering angle
+- [ ] Function to read the steering angle - Fede
 - [x] Transform the kinematic model from wolfram to python
 
 ## Data analysis
 
 - [ ] Compare kinematic maps
-
+- [ ] Compare GPS positions
+- [ ] Compare kinematic point positions
+ 
 ## To fix
 - [ ] Add support for other bumpsteer options for rear suspensions kinematics
 - [x] Add reference frame for p9 -> correct the position along y
