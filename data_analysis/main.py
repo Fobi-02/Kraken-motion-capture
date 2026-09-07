@@ -3,7 +3,7 @@ from functions.read_csv import read_csv
 from functions.plot import *
 from functions.map_points import *
 
-file_select = "F-60"
+file_select = "SW"
 
 if file_select == "F-30":
     csv_file = "../data/F-30_001.csv"
@@ -32,3 +32,8 @@ elif file_select == "F-90":
     csv_file = "../data/F-60_001.csv"
     df = read_csv(csv_file)
     plot_markers(df, 2500)
+
+elif file_select == "SW":
+    csv_file = "../data/SW_002.csv"
+    df = read_csv(csv_file)
+    plot_markers_slider(df, 200)

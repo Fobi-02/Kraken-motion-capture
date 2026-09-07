@@ -38,6 +38,10 @@ def marker_to_kinematic_points(df):
         marker_groups = json.load(f)
 
     df_new = pd.DataFrame(index=df.index)
+    # columns for wheels reference frames
+    df_new["P9l_F_RF"] = None
+    df_new["P9l_R_RF"] = None
+
     for new_marker, markers in marker_groups.items():
         for axis in ["X", "Y", "Z"]:
             columns = [f"{marker}_{axis}" for marker in markers]
@@ -82,7 +86,7 @@ def marker_to_kinematic_points(df):
             df_new.loc[df_new.index[i], "P9l_F_Y"] = float(P9[1])
             df_new.loc[df_new.index[i], "P9l_F_Z"] = float(P9[2])
             # Adding the wheel RF to the dataframe
-            df_new.loc[df_new.index[i], "P9l_F_RF"] = RF_P9
+            df_new.at[df_new.index[i], "P9l_F_RF"] = RF_P9
 
 
         # REAR P9
@@ -115,6 +119,4 @@ def marker_to_kinematic_points(df):
 
 
     return df_new
-
-
 
