@@ -4,16 +4,16 @@
 
 - [x] Function to plot the points with animations
 - [ ] Use chassis points to rototranslate the chsssis in the correct RF (using model points) - Zano
-- [x] Add wheel reference frame - Fede
+- [x] Add wheel reference frame
 - [ ] Correct missing kinematic points
-- [ ] Maps to assign two mocap points to a single suspension link with the correct name (3/17)
+- [ ] Maps to assign two mocap points to a single suspension link with the correct name (6/15)
         - Use plot_markers to associate the names at frame 0
         - Check if they are all present from the name of the columns of the csv file
         - Probably some markers appear in later frames so the json file also have to be updated
         - Pay attention to the steering markers (+ clockwise rotation, - counterclockwise rotation)
 - [x] Function to transform df based on maps
 - [x] Function to plot the chassis with links
-- [x] Function to read the steering angle - Fede
+- [x] Function to read the steering angle
 - [x] Transform the kinematic model from wolfram to python
 
 ## Data analysis

@@ -3,50 +3,47 @@ from functions.read_csv import read_csv
 from functions.plot import *
 from functions.map_points import *
 
-file_select = "F-90"
+file_select = "F60"
 
-if file_select == "F-30":
-    csv_file = "../data/F-30_001.csv"
-    json_file = "../data/marker_maps/F-30map.json"
-    df = read_csv(csv_file)
-    # renaming each marker to the correct name
-    df = rename_markers(df, json_file)
-    # finding the kinematic points given the markers
-    df = marker_to_kinematic_points(df)
+match file_select:
+    case "F-30":
+        csv_file = "../data/F-30_001.csv"
+        json_file = "../data/marker_maps/F-30map.json"
 
-    # Plotting the markers in a wanted frame
-    frame = 2400
-    #plot_markers(df, frame)
-    #plot_links(df, frame)
-    plot_markers_slider(df)
+    case "F-60":
+        csv_file = "../data/F-60_001.csv"
+        json_file = "../data/marker_maps/F-60map.json"
 
-elif file_select == "F-60":
-    csv_file = "../data/F-60_001.csv"
-    json_file = "../data/marker_maps/F-60map.json"
-    df = read_csv(csv_file)
-    df = rename_markers(df, json_file)
-    df = marker_to_kinematic_points(df)
-    plot_markers(df, 0)
+    case "F-90":
+        csv_file = "../data/F-90_001.csv"
+        json_file = "../data/marker_maps/F-90map.json"
 
-elif file_select == "F-90":
-    csv_file = "../data/F-90_001.csv"
-    json_file = "../data/marker_maps/F-90map.json"
-    df = read_csv(csv_file)
-    df = rename_markers(df, json_file)
-    print("P4: ", df.loc[0, "p04_Z"], " P5: ", df.loc[0, "p05_Z"], " P6: ", df.loc[0, "p06_Z"])
-    df = marker_to_kinematic_points(df)
-    plot_markers_slider(df, 200)
-    
-    
+    case "F-110":
+        csv_file = "../data/F-110_001.csv"
+        json_file = "../data/marker_maps/F-110map.json"
 
-elif file_select == "SW":
-    csv_file = "../data/SW_002.csv"
-    df = read_csv(csv_file)
-    plot_markers_slider(df, 200)
+    case "F0":
+        csv_file = "../data/F0_001.csv"
+        json_file = "../data/marker_maps/F0map.json"
 
-# test of steering angle function
-P4 = np.array([94.1511, 46.9846, 183.93])
-P5 = np.array([89.0077, -38.3022, 169.799])
-P6 = np.array([116.841, -8.68241, 246.271])
-delta = steering_angle(P4,P5,P6)
-#print(delta)
+    case "F30":
+        csv_file = "../data/F30_001.csv"
+        json_file = "../data/marker_maps/F30map.json"
+
+    case "F60":
+        csv_file = "../data/F60_001.csv"
+        json_file = "../data/marker_maps/F60map.json"
+
+    case _:
+        print("Error")
+
+df = read_csv(csv_file)
+# renaming each marker to the correct name
+df = rename_markers(df, json_file)
+# finding the kinematic points given the markers
+df = marker_to_kinematic_points(df)
+
+# Plotting the markers in a wanted frame
+#plot_markers(df, 0)
+#plot_links(df, frame)
+plot_markers_slider(df, step=100)

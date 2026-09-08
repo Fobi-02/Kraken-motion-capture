@@ -100,6 +100,9 @@ def plot_markers_slider(df, step=1):
             if not any(pd.isna([x, y, z])):
                 ax.scatter(x, y, z, s=30, color='black')
 
+                # plotting the name of the marker
+                ax.text(x, y, z, marker, fontsize=10)
+
         ax.set_xlim(x_min, x_max)
         ax.set_ylim(y_min, y_max)
         ax.set_zlim(z_min, z_max)
