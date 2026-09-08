@@ -107,9 +107,9 @@ class RearKinematics:
         self.xWr, self.yWr, self.zWr, self.deltaWr, self.gammaWr, self.thetaWr = sp.symbols('xWr yWr zWr deltaWr gammaWr thetaWr')
         self.DeltaZ, self.phi = sp.symbols('DeltaZ phi')
 
-    def set_kinematic_problem(self):
+    def set_kinematic_problem(self, pos="center"):
         '''
-        Writes the kinematic problem and returns the system of equations
+        Writes the kinematic problem and returns the system of equations, possibile tierod position: [center, rear, front]
         '''
         #  _____        _        
         # |  __ \      | |       
@@ -125,7 +125,15 @@ class RearKinematics:
             VehicleData = json.load(f)
         globals().update(VehicleData)
 
-        with open("RearSuspensionPoints.json", "r", encoding="utf-8") as f:
+        # loading different coordinates based on the tierod position selected
+        if pos == "center":
+            with open("RearSuspensionPoints.json", "r", encoding="utf-8") as f:
+                dataKine = json.load(f)
+        elif pos == "rear":
+            with open("RearSuspensionPoints-2.json", "r", encoding="utf-8") as f:
+                dataKine = json.load(f)
+        elif pos == "front":
+            with open("RearSuspensionPoints+2.json", "r", encoding="utf-8") as f:
                 dataKine = json.load(f)
         globals().update(dataKine)
 

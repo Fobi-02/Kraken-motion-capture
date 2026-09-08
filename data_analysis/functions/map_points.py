@@ -115,8 +115,41 @@ def marker_to_kinematic_points(df):
             # Adding the wheel RF to the dataframe
             df_new.loc[df_new.index[i], "P9l_R_RF"] = RF_P9
 
-
-
-
     return df_new
 
+def steering_angle(P4, P5, P6):
+    '''
+    Given the three steering markers it computes the steering angle
+    !!! All the markers have to be in the correct car RF before using this function !!!
+    '''
+    # central point of the three markers
+    Ps = np.mean([P4, P5, P6], axis=0)
+
+    # steering wheel reference frame
+    nz = (P4 - Ps) / np.linalg.norm(P4 - Ps)
+    ny = (P5 - P6) / np.linalg.norm(P5 - P6)
+    nx = np.cross(ny, nz)
+    RFsteering = np.array([
+        [nx[0], ny[0], nz[0], Ps[0]],
+        [nx[1], ny[1], nz[1], Ps[1]],
+        [nx[2], ny[2], nz[2], Ps[2]],
+        [0,     0,     0,     1    ]
+    ])
+
+    # steering wheel static reference frame (at delta=0°)
+    nxs = nx
+    nys = np.array([0, 1, 0])
+    nzs = np.cross(nxs, nys)
+    RFstatic = np.array([
+            [nxs[0], nys[0], nzs[0], Ps[0]],
+            [nxs[1], nys[1], nzs[1], Ps[1]],
+            [nxs[2], nys[2], nzs[2], Ps[2]],
+            [0,      0,      0,      1    ]
+        ])
+
+    # computing steering angle by solving the equation {RFstatic @ rotate("X", delta) == RFsteering} for delta
+    cos_delta = ( RFstatic[0, 1]*RFsteering[0, 1] + RFstatic[0, 2]*RFsteering[0, 2]) / ( RFstatic[0, 1]**2 + RFstatic[0, 2]**2)
+    sin_delta = (RFstatic[0, 2]*RFsteering[0, 1] -  RFstatic[0, 1]*RFsteering[0, 2]) / ( RFstatic[0, 1]**2 + RFstatic[0, 2]**2)
+    steering_angle = np.arctan2(sin_delta, cos_delta) * 180 / np.pi
+    
+    return steering_angle
