@@ -3,7 +3,7 @@ from functions.read_csv import read_csv
 from functions.plot import *
 from functions.map_points import *
 
-file_select = "F90"
+file_select = "R-2"
 
 match file_select:
     case "F-30":
@@ -38,10 +38,19 @@ match file_select:
         csv_file = "../data/F90_002.csv"
         json_file = "../data/marker_maps/F90map.json"
 
+    case "F110":
+        csv_file = "../data/F110_001.csv"
+        json_file = "../data/marker_maps/F110map.json"
+
+    case "R-2":
+        csv_file = "../data/R-2_001.csv"
+        json_file = "../data/marker_maps/R-2map.json"
+
     case _:
         print("Error")
 
 df = read_csv(csv_file)
+plot_markers(df, 50)
 # renaming each marker to the correct name
 df = rename_markers(df, json_file)
 # finding the kinematic points given the markers
@@ -51,6 +60,3 @@ df = marker_to_kinematic_points(df)
 #plot_markers(df, 0)
 #plot_links(df, frame)
 plot_markers_slider(df, step=100)
-
-print(df)
-plt.plot(df["GPS_F"])
