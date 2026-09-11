@@ -8,27 +8,42 @@ sys.path.append(
 from kinematic_model.Kraken_front_sus_kinematics import *
 
 def rename_markers(df, json_path):
-    '''
+    """
     function to rename the markers based on the map in the json file
-    '''
+    """
+
     with open(json_path, "r") as f:
         marker_map = json.load(f)
-
-    new_columns = {}
+    # groups columns
+    mapped_columns = {}
     for column in df.columns:
         for old_name, new_name in marker_map.items():
             if column.startswith(old_name + "_"):
                 suffix = column[len(old_name):]
-                new_columns[column] = new_name + suffix
+                mapped_columns.setdefault(new_name, {})
+                mapped_columns[new_name].setdefault(suffix, [])
+                mapped_columns[new_name][suffix].append(column)
                 break
 
-    # keeping only the columns mapped on the map
-    df_new = df[list(new_columns.keys())].copy()
+    result_columns = {}
 
-    # renaming the columns
-    df_new = df_new.rename(columns=new_columns)
+    for new_name, suffixes in mapped_columns.items():
+        for suffix, columns in suffixes.items():
+            new_column = new_name + suffix
+            if len(columns) == 1:
+                result_columns[new_column] = df[columns[0]]
+            else:
+                # selecting the first not NaN value of columns with the same name
+                result_columns[new_column] = (
+                    df[columns]
+                    .bfill(axis=1)
+                    .iloc[:, 0]
+                )
 
-    return df_new
+    # creating the new data frame
+    result = pd.DataFrame(result_columns, index=df.index)
+
+    return result
 
 def marker_to_kinematic_points(df):
     '''
@@ -39,8 +54,8 @@ def marker_to_kinematic_points(df):
 
     df_new = pd.DataFrame(index=df.index)
     # columns for wheels reference frames
-    df_new["P9l_F_RF"] = None
-    df_new["P9l_R_RF"] = None
+    df_new["P9l_F_RF"] = pd.Series(index=df_new.index, dtype=object)
+    df_new["P9l_R_RF"] = pd.Series(index=df_new.index, dtype=object)
 
     for new_marker, markers in marker_groups.items():
         for axis in ["X", "Y", "Z"]:
@@ -91,7 +106,6 @@ def marker_to_kinematic_points(df):
 
         # REAR P9
         if not pd.isna(row_new[f"P9l_R_X"]):
-            print("prova")
             # z axis unit vector
             nz = np.array([row[f"p49_X"]-row_new[f"P9l_R_X"], row[f"p49_Y"]-row_new[f"P9l_R_Y"], row[f"p49_Z"]-row_new[f"P9l_R_Z"]])
             nz = nz / np.linalg.norm(nz)
@@ -113,7 +127,7 @@ def marker_to_kinematic_points(df):
             df_new.loc[df_new.index[i], "P9l_R_Y"] = float(P9[1])
             df_new.loc[df_new.index[i], "P9l_R_Z"] = float(P9[2])
             # Adding the wheel RF to the dataframe
-            df_new.loc[df_new.index[i], "P9l_R_RF"] = RF_P9
+            df_new.at[df_new.index[i], "P9l_R_RF"] = RF_P9
 
     return df_new
 

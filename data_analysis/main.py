@@ -3,7 +3,7 @@ from functions.read_csv import read_csv
 from functions.plot import *
 from functions.map_points import *
 
-file_select = "R-2"
+file_select = "R0"
 
 match file_select:
     case "F-30":
@@ -46,11 +46,14 @@ match file_select:
         csv_file = "../data/R-2_001.csv"
         json_file = "../data/marker_maps/R-2map.json"
 
+    case "R0":
+        csv_file = "../data/R0_001.csv"
+        json_file = "../data/marker_maps/R0map.json"
+
     case _:
         print("Error")
 
 df = read_csv(csv_file)
-plot_markers(df, 50)
 # renaming each marker to the correct name
 df = rename_markers(df, json_file)
 # finding the kinematic points given the markers
