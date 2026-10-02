@@ -4,9 +4,13 @@ Script used to study suspension kinematics
 '''
 
 import json
+from pathlib import Path
+
 import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
+
+KINEMATIC_MODEL_DIR = Path(__file__).resolve().parent
 
 #  _____       _        _   _               __  __       _        _      
 # |  __ \     | |      | | (_)             |  \/  |     | |      (_)     
@@ -121,11 +125,11 @@ class FrontKinematics:
         #region Data
         
         # importing vehicle data and suspension points
-        with open("VehicleData.json", "r", encoding="utf-8") as f:
+        with open(KINEMATIC_MODEL_DIR / "VehicleData.json", "r", encoding="utf-8") as f:
             VehicleData = json.load(f)
         globals().update(VehicleData)
 
-        with open("FrontSuspensionPoints.json", "r", encoding="utf-8") as f:
+        with open(KINEMATIC_MODEL_DIR / "FrontSuspensionPoints.json", "r", encoding="utf-8") as f:
                 dataKine = json.load(f)
         globals().update(dataKine)
 

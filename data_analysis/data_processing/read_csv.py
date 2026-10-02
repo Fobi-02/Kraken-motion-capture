@@ -7,7 +7,7 @@ def read_csv(file_path):
     reads a CSV file of the mocap data and returns a dataframe
     """
 
-    # reading csv
+    # Read CSV
     with open(file_path, "r", encoding="utf-8-sig", newline="") as f:
         reader = csv.reader(f)
         rows = list(reader)
@@ -20,7 +20,7 @@ def read_csv(file_path):
     # Position
     # Frame, Time (Seconds), X, Y, Z, ...
 
-    # searching the line that starts with Frame
+    # Searching the line that starts with "Frame"
     header_index = None
 
     for i, row in enumerate(rows):
@@ -31,11 +31,11 @@ def read_csv(file_path):
     if header_index is None:
         raise ValueError("No rows found matching the motion capture CSV format.")
 
-    # saving the type and the name of the columns
+    # Saving the type and the name of the columns
     row_name = rows[header_index - 3]
     row_data_type = rows[header_index - 1]
 
-    # deciding the names of the columns
+    # Deciding the names of the columns
     columns = []
     columns.append("Frame")
     columns.append("Time")

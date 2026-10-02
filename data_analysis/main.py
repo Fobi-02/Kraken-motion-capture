@@ -1,62 +1,40 @@
-import matplotlib.pyplot as plt
-from functions.read_csv import read_csv
-from functions.plot import *
-from functions.map_points import *
+import json
 
-file_select = "SW"
+from data_analysis.data_processing.experiment_list import get_experiment
+from data_analysis.data_processing.map_points import marker_to_kinematic_points, rename_markers, report_point_quality, report_marker_availability, report_problematic_points
+from data_analysis.data_processing.read_csv import read_csv
+from data_analysis.visualization.plot import plot_markers, plot_markers_slider, plot_links
 
-match file_select:
-    case "F-30":
-        csv_file = "../data/F-30_001.csv"
-        json_file = "../data/marker_maps/F-30map.json"
-    case "F-60":
-        csv_file = "../data/F-60_001.csv"
-        json_file = "../data/marker_maps/F-60map.json"
-    case "F-90":
-        csv_file = "../data/F-90_001.csv"
-        json_file = "../data/marker_maps/F-90map.json"
-    case "F-110":
-        csv_file = "../data/F-110_001.csv"
-        json_file = "../data/marker_maps/F-110map.json"
-    case "F0":
-        csv_file = "../data/F0_001.csv"
-        json_file = "../data/marker_maps/F0map.json"
-    case "F30":
-        csv_file = "../data/F30_001.csv"
-        json_file = "../data/marker_maps/F30map.json"
-    case "F60":
-        csv_file = "../data/F60_001.csv"
-        json_file = "../data/marker_maps/F60map.json"
-    case "F90":
-        csv_file = "../data/F90_002.csv"
-        json_file = "../data/marker_maps/F90map.json"
-    case "F110":
-        csv_file = "../data/F110_001.csv"
-        json_file = "../data/marker_maps/F110map.json"
-    case "R-2":
-        csv_file = "../data/R-2_001.csv"
-        json_file = "../data/marker_maps/R-2map.json"
-    case "R0":
-        csv_file = "../data/R0_001.csv"
-        json_file = "../data/marker_maps/R0map.json"
-    case "R2":
-        csv_file = "../data/R2_001.csv"
-        json_file = "../data/marker_maps/R2map.json"
-    case "SW":
-        csv_file = "../data/SW_002.csv"
-        json_file = "../data/marker_maps/SWmap.json"
 
-    case _:
-        print("Error")
+def main():
+    file_select = "R0"  # Change this to the desired experiment name
+    csv_file, json_file = get_experiment(file_select)
+    df_raw = read_csv(csv_file)
 
-df = read_csv(csv_file)
-plot_markers(df,0)
-# renaming each marker to the correct name
-df = rename_markers(df, json_file)
-# finding the kinematic points given the markers
-df = marker_to_kinematic_points(df)
+    # Rename markers and convert to kinematic points
+    df_renamed = rename_markers(df_raw, json_file)
+    df = marker_to_kinematic_points(df_renamed)
 
-# Plotting the markers in a wanted frame
-#plot_markers(df, 0)
-#plot_links(df, frame)
-plot_markers_slider(df, step=100)
+    # Plot raw markers
+    plot_markers(df_raw, 0)
+
+    with open("data/marker_maps/marker_to_kinematic_points.json", "r", encoding="utf-8") as f:
+        marker_groups = json.load(f)
+
+    # Some statistics and reports on marker availability and point quality
+    report_marker_availability(df_renamed, marker_groups)
+    report_point_quality(df)
+    report_problematic_points(df)
+    plot_markers_slider(df, step=100)
+
+    # Plot links for a specific frame
+    plot_links(df, 0)
+
+    ## WIP: Transform points to car RF and save to new CSV
+    # get the car RF and transform the points to the car RF, then save it to a new csv file
+    # H_marker_to_car = determine_marker_to_car_transformation(df_renamed, marker_groups)
+    # df_correctedRF = transform_points_to_car_RF(df, H_marker_to_car)
+    # df_correctedRF.to_csv("data/processed/F0_correctedRF.csv", index=False)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,15 @@
+[project]
+name = "kraken-motion-capture"
+version = "0.1.0"
+readme = "README.md"
+authors = [
+    { name = "l-zanolini", email = "luca.zanolini.1cst@gmail.com" },
+    { name = "Fobi-02" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
+    "sympy>=1.14.0",
+]
