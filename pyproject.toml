@@ -4,7 +4,7 @@ version = "0.1.0"
 readme = "README.md"
 authors = [
     { name = "l-zanolini", email = "luca.zanolini.1cst@gmail.com" },
-    { name = "Fobi-02" }
+    { name = "Fobi-02", email = "federicobattisti4@gmail.com" }
 ]
 requires-python = ">=3.12,<3.13"
 dependencies = [
@@ -13,3 +13,6 @@ dependencies = [
     "pandas>=3.0.6",
     "sympy>=1.14.0",
 ]
+[tool.setuptools.packages.find]
+include = ["data_analysis*", "kinematic_model*"]
+exclude = ["data*", "images*", "print_files*"]

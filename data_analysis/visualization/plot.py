@@ -1,7 +1,8 @@
 import pandas as pd
+import matplotlib
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-
 from data_analysis.visualization.plot_config import CONNECTIONS
 from data_analysis.visualization.utils import _get_point_names, _get_axis_limits, _set_axis_limits, _label_axes, _plot_points
 
@@ -40,7 +41,7 @@ def plot_markers_slider(df, step=1):
         row = df.iloc[frame_number]
 
         _plot_points(ax, row, points)
-        _plot_connections(ax, row)
+        #_plot_connections(ax, row, frame_number)
         _set_axis_limits(ax, axis_limits)
         _label_axes(ax)
         ax.set_title(f"Frame {frame_number} / {len(df) - 1}")

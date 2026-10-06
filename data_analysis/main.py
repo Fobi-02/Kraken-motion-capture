@@ -3,11 +3,14 @@ import json
 from data_analysis.data_processing.experiment_list import get_experiment
 from data_analysis.data_processing.map_points import marker_to_kinematic_points, rename_markers, report_point_quality, report_marker_availability, report_problematic_points
 from data_analysis.data_processing.read_csv import read_csv
+from data_analysis.data_processing.find_reference_frame import find_reference_frame
 from data_analysis.visualization.plot import plot_markers, plot_markers_slider, plot_links
 
 
+# Problem with kinematic points without all marker visible during the optimization
+
 def main():
-    file_select = "R0"  # Change this to the desired experiment name
+    file_select = "F-30"  # Change this to the desired experiment name
     csv_file, json_file = get_experiment(file_select)
     df_raw = read_csv(csv_file)
 
@@ -15,20 +18,22 @@ def main():
     df_renamed = rename_markers(df_raw, json_file)
     df = marker_to_kinematic_points(df_renamed)
 
+    T = find_reference_frame(df)
+
     # Plot raw markers
-    plot_markers(df_raw, 0)
+    #plot_markers(df_renamed, 0)
 
     with open("data/marker_maps/marker_to_kinematic_points.json", "r", encoding="utf-8") as f:
         marker_groups = json.load(f)
 
     # Some statistics and reports on marker availability and point quality
-    report_marker_availability(df_renamed, marker_groups)
-    report_point_quality(df)
-    report_problematic_points(df)
-    plot_markers_slider(df, step=100)
+    #report_marker_availability(df_renamed, marker_groups)
+    #report_point_quality(df)
+    #report_problematic_points(df)
+    #plot_markers_slider(df, step=100)
 
     # Plot links for a specific frame
-    plot_links(df, 0)
+    #plot_links(df, 0)
 
     ## WIP: Transform points to car RF and save to new CSV
     # get the car RF and transform the points to the car RF, then save it to a new csv file

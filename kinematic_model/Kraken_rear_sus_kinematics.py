@@ -26,8 +26,9 @@ def translate(x, y, z):
 
 def rotate(axis, theta):
     """Return a 4x4 rotation matrix."""
-    c = sp.cos(theta)
-    s = sp.sin(theta)
+    theta = float(theta)
+    c = np.cos(theta)
+    s = np.sin(theta)
     axis = axis.upper()
 
     if axis == "X":
