@@ -3,7 +3,7 @@ import json
 from data_analysis.data_processing.experiment_list import get_experiment
 from data_analysis.data_processing.map_points import marker_to_kinematic_points, rename_markers, report_point_quality, report_marker_availability, report_problematic_points
 from data_analysis.data_processing.read_csv import read_csv
-from data_analysis.data_processing.find_reference_frame import find_reference_frame
+from data_analysis.data_processing.reference_frame import find_reference_frame
 from data_analysis.visualization.plot import plot_markers, plot_markers_slider, plot_links
 
 
@@ -16,8 +16,13 @@ def main():
 
     # Rename markers and convert to kinematic points
     df_renamed = rename_markers(df_raw, json_file)
+
+    # Convert to kinematic points, without steering wheel. 
+    # We keep also the kinematic points that are mapped with only one marker, just for plotting purposes
+    # but we add a flag to understand if they are cyomplete or not
     df = marker_to_kinematic_points(df_renamed)
 
+    # find the car reference frame, only with the kinematic points with both m arkers visible
     T = find_reference_frame(df)
 
     # Plot raw markers
@@ -27,9 +32,8 @@ def main():
         marker_groups = json.load(f)
 
     # Some statistics and reports on marker availability and point quality
-    #report_marker_availability(df_renamed, marker_groups)
-    #report_point_quality(df)
-    #report_problematic_points(df)
+    report_marker_availability(df_renamed, marker_groups)
+    report_point_quality(df)
     #plot_markers_slider(df, step=100)
 
     # Plot links for a specific frame

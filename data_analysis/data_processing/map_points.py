@@ -382,43 +382,6 @@ def marker_to_kinematic_points(df):
 
     return df_new
 
-def steering_angle(P4, P5, P6):
-    '''
-    Given the three steering markers it computes the steering angle
-    !!! All the markers have to be in the correct car RF before using this function !!!
-    '''
-    # central point of the three markers
-    Ps = np.mean([P4, P5, P6], axis=0)
-
-    # steering wheel reference frame
-    nz = (P4 - Ps) / np.linalg.norm(P4 - Ps)
-    ny = (P5 - P6) / np.linalg.norm(P5 - P6)
-    nx = np.cross(ny, nz)
-    RFsteering = np.array([
-        [nx[0], ny[0], nz[0], Ps[0]],
-        [nx[1], ny[1], nz[1], Ps[1]],
-        [nx[2], ny[2], nz[2], Ps[2]],
-        [0,     0,     0,     1    ]
-    ])
-
-    # steering wheel static reference frame (at delta=0°)
-    nxs = nx
-    nys = np.array([0, 1, 0])
-    nzs = np.cross(nxs, nys)
-    RFstatic = np.array([
-            [nxs[0], nys[0], nzs[0], Ps[0]],
-            [nxs[1], nys[1], nzs[1], Ps[1]],
-            [nxs[2], nys[2], nzs[2], Ps[2]],
-            [0,      0,      0,      1    ]
-        ])
-
-    # computing steering angle by solving the equation {RFstatic @ rotate("X", delta) == RFsteering} for delta
-    cos_delta = ( RFstatic[0, 1]*RFsteering[0, 1] + RFstatic[0, 2]*RFsteering[0, 2]) / ( RFstatic[0, 1]**2 + RFstatic[0, 2]**2)
-    sin_delta = (RFstatic[0, 2]*RFsteering[0, 1] -  RFstatic[0, 1]*RFsteering[0, 2]) / ( RFstatic[0, 1]**2 + RFstatic[0, 2]**2)
-    steering_angle = np.arctan2(sin_delta, cos_delta) * 180 / np.pi
-    
-    return steering_angle
-
 def report_point_quality(df):
     """
     Print a summary of how each kinematic point was calculated.
@@ -492,50 +455,3 @@ def report_marker_availability(df, marker_groups):
             f"{marker:5s} present: {present:5d}/{len(df)} "
             f"missing: {missing:5d}"
         )
-
-def report_problematic_points(df):
-    """
-    Print only kinematic points that cannot be calculated exclusively
-    from all their expected markers.
-    """
-
-    point_status = df.attrs.get("point_status")
-
-    if point_status is None:
-        raise ValueError(
-            "No point-status information found in DataFrame."
-        )
-
-    print("\nProblematic kinematic points:")
-    print("-" * 80)
-
-    found_problem = False
-
-    for point, information in point_status.items():
-
-        status = information["status"]
-        expected = information["expected_markers"]
-        available = information["available_markers"]
-
-        counts = status.value_counts()
-
-        averaged = counts.get("averaged", 0)
-        single = counts.get("single_marker", 0)
-        missing = counts.get("missing", 0)
-
-        if single == 0 and missing == 0:
-            continue
-
-        found_problem = True
-
-        print(f"{point}")
-        print(f"  expected: {expected}")
-        print(f"  available: {available}")
-        print(
-            f"  averaged: {averaged}"
-            f"  single: {single}"
-            f"  missing: {missing}"
-        )
-
-    if not found_problem:
-        print("No problematic kinematic points found.")

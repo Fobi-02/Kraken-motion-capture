@@ -6,7 +6,6 @@
 - [x] Correctly connect points with colored links
 - [ ] Use chassis points to rototranslate the chsssis in the correct RF (using model points). we use p1, p2, p3, p4 gps steering f and r, knowing they position w.r.t. the correct RF and for each points we derive a rototranslation matrix to get the points there with a minimization
 - [x] Add wheel reference frame
-- [ ] Correct missing kinematic points, decide how to define the points from one single marker (or maybe even none)
 - [x] Maps to assign two mocap points to a single suspension link with the correct name
         - Use plot_markers to associate the names at frame 0
         - Check if they are all present from the name of the columns of the csv file
@@ -19,9 +18,9 @@
 
 ## Data analysis
 
-- [ ] Compare kinematic maps
-- [ ] Compare GPS positions
-- [ ] Compare kinematic point positions
+- [ ] Find GPS positions w.r.t. the car RF
+- [ ] Compare kinematic point positions on the chassis
+- [ ] Compare kinematic maps of P9 RF, depending on delta and wheel height
  
 ## To fix
 - [x] Add support for other bumpsteer options for rear suspensions kinematics

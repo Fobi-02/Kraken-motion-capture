@@ -89,3 +89,17 @@ def find_reference_frame(df):
     return T_opt
 
 
+def transform_points_to_car_RF(df, T):
+    """ Transform kinematic points to car RF. We transform all the kin points, also those with only one marker just for plotting
+        and we keep the flag to understand if they are complete or not
+        we transform also the steering wheel points and the reference frame of P9"""
+    df_transformed = df.copy()
+    for point in df.columns:
+        if point.endswith(("_X", "_Y", "_Z")):
+            point_name = point[:-2]
+            coords = np.array([df[point_name + "_X"], df[point_name + "_Y"], df[point_name + "_Z"], np.ones(len(df))])
+            transformed_coords = (T @ coords).T
+            df_transformed[point_name + "_X"] = transformed_coords[:, 0]
+            df_transformed[point_name + "_Y"] = transformed_coords[:, 1]
+            df_transformed[point_name + "_Z"] = transformed_coords[:, 2]
+    return df_transformed
