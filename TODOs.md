@@ -15,7 +15,7 @@
 - [x] Function to plot the chassis with links
 - [x] Function to read the steering angle
 - [x] Transform the kinematic model from wolfram to python
-- [ ] ZANO: modify marker_to_kinematic_point and transofrm_RF 
+- [ ] ZANO: simplify marker_to_kinematic_point and do transofrm_RF 
 - [ ] FEDE: modify steering angle and compare P9 RF with vehicle model
 
 ## Data analysis

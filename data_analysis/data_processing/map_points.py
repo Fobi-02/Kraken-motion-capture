@@ -5,11 +5,13 @@ import numpy as np
 import pandas as pd
 
 from kinematic_model.Kraken_front_sus_kinematics import get_point, translate
+from data_analysis.data_processing.wheel import _calculate_p9_wheel_frames
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
 
+AXES = ("X", "Y", "Z")
 WHEEL_CENTER_OFFSET = 18.16
 
 FRONT_P9_REFERENCE_MARKER = "p25"
@@ -18,19 +20,24 @@ FRONT_P9_X_MARKERS = ("p26", "p27")
 REAR_P9_REFERENCE_MARKER = "p49"
 REAR_P9_X_MARKERS = ("p50", "p51")
 
-def rename_markers(df, json_path):
-    """
-    function to rename the markers based on the map in the json file
-    """
 
-    with open(json_path, "r") as f:
-        marker_map = json.load(f)
-    # groups columns
+# ----------------------------------- UTILITIES -----------------------------------
+def rename_markers(df, json_path):
+    """Rename raw marker columns using the JSON mapping."""
+    with open(json_path, encoding="utf-8") as file:
+        marker_map = json.load(file)
     mapped_columns = {}
+
+    # Loop through each column in the DataFrame and check if it starts with any of the old marker names.
+    # Then loop through the suffixes to find the corresponding new marker name and create a new column with the new name.
+    # If multiple old marker names map to the same new marker name, we will use the first non-missing value when columns map together.
     for column in df.columns:
         for old_name, new_name in marker_map.items():
-            if column.startswith(old_name + "_"):
+            # Check if the column starts with the old marker name and has a suffix (e.g., "_X", "_Y", "_Z")
+            if column.startswith(f"{old_name}_"):
+                # Extract the suffix (e.g., "_X", "_Y", "_Z") from the column name.
                 suffix = column[len(old_name):]
+                # Initialize the new marker name in the mapped_columns dictionary if it doesn't exist.
                 mapped_columns.setdefault(new_name, {})
                 mapped_columns[new_name].setdefault(suffix, [])
                 mapped_columns[new_name][suffix].append(column)
@@ -38,420 +45,220 @@ def rename_markers(df, json_path):
 
     result_columns = {}
 
+    # Loop through the mapped columns and create new columns in the result DataFrame
     for new_name, suffixes in mapped_columns.items():
         for suffix, columns in suffixes.items():
-            new_column = new_name + suffix
+            new_column = f"{new_name}{suffix}"
+
             if len(columns) == 1:
                 result_columns[new_column] = df[columns[0]]
             else:
-                # selecting the first not NaN value of columns with the same name
-                result_columns[new_column] = (
-                    df[columns]
-                    .bfill(axis=1)
-                    .iloc[:, 0]
-                )
+                # Use the first non-missing value when columns map together.
+                result_columns[new_column] = df[columns].bfill(axis=1).iloc[:, 0]
 
-    # creating the new data frame
-    result = pd.DataFrame(result_columns, index=df.index)
+    return pd.DataFrame(result_columns, index=df.index)
 
-    return result
 
-def _calculate_wheel_reference_frame(
-    wheel_center,
-    z_reference,
-    x_reference_start,
-    x_reference_end,
-):
-    """
-    Calculate the wheel reference frame.
-
-    Parameters
-    ----------
-    wheel_center:
-        Current wheel-center position.
-
-    z_reference:
-        Marker defining the local Z direction.
-
-    x_reference_start:
-        First marker defining the local X direction.
-
-    x_reference_end:
-        Second marker defining the local X direction.
-
-    Returns
-    -------
-    numpy.ndarray
-        4x4 homogeneous transformation matrix.
-    """
-
-    nz = z_reference - wheel_center
-    nz = nz / np.linalg.norm(nz)
-
-    nx = x_reference_end - x_reference_start
-    nx = nx / np.linalg.norm(nx)
-
-    ny = np.cross(nz, nx)
-
-    transformation = np.array([
-        [nx[0], ny[0], nz[0], wheel_center[0]],
-        [nx[1], ny[1], nz[1], wheel_center[1]],
-        [nx[2], ny[2], nz[2], wheel_center[2]],
-        [0.0,  0.0,   0.0,   1.0],
-    ])
-
-    return transformation @ translate(
-        0,
-        -WHEEL_CENTER_OFFSET,
-        0,
-    )
-
-def _update_wheel_center(
-    df_new,
-    index,
-    wheel_name,
-    reference_frame,
-):
-    """Update wheel-center coordinates and store its reference frame."""
-
-    point = get_point(reference_frame)
-
-    df_new.loc[index, f"{wheel_name}_X"] = float(point[0])
-    df_new.loc[index, f"{wheel_name}_Y"] = float(point[1])
-    df_new.loc[index, f"{wheel_name}_Z"] = float(point[2])
-
-    df_new.at[index, f"{wheel_name}_RF"] = reference_frame
+# ------------------------------- AVERAGE KINEMATIC POINTS -----------------------------------
 
 def _average_marker_group(df, markers):
     """
-    Calculate a kinematic point from a group of markers.
+    Calculate a kinematic point from its contributing markers.
 
-    Rules:
-    - all available markers are averaged;
-    - if only one marker is available, that marker is used;
-    - if no marker is available, the result is NaN.
-
-    Returns
-    -------
-    position : pandas.DataFrame
-        X/Y/Z coordinates of the kinematic point.
-
-    status : pandas.Series
-        "averaged", "single_marker", or "missing".
-
-    available_markers : list[str]
-        Markers that actually exist in the DataFrame.
+    Status for each frame:
+    - ALL: two or more markers contribute to the average.
+    - SINGLE: exactly one marker contributes.
+    - MISSING: no markers contribute.
     """
-
-    axes = ["X", "Y", "Z"]
-
-    available_markers = []
-
-    for marker in markers:
-        columns = [f"{marker}_{axis}" for axis in axes]
-
-        if all(column in df.columns for column in columns):
-            available_markers.append(marker)
-
-    result = pd.DataFrame(
-        np.nan,
-        index=df.index,
-        columns=axes,
-    )
-
-    status = pd.Series(
-        "missing",
-        index=df.index,
-        dtype="string",
-    )
-
-    if not available_markers:
-        return result, status, available_markers
-
-    marker_data = [
-        df[
-            [f"{marker}_{axis}" for axis in axes]
-        ].to_numpy(dtype=float)
-        for marker in available_markers
+    available_markers = [
+        marker
+        for marker in markers
+        if all(f"{marker}_{axis}" in df.columns for axis in AXES)
     ]
 
-    data = np.stack(marker_data, axis=1)
+    status = pd.Series("MISSING", index=df.index, dtype="string")
 
-    valid = ~np.isnan(data).any(axis=2)
+    if not available_markers:
+        position = pd.DataFrame(
+            np.nan, index=df.index, columns=AXES, dtype=float
+        )
+        return position, status, available_markers
 
-    for i in range(len(df)):
-        valid_points = data[i][valid[i]]
+    # Shape: (frames, markers, coordinates).
+    data = np.stack(
+        [
+            df[[f"{marker}_{axis}" for axis in AXES]].to_numpy(dtype=float)
+            for marker in available_markers
+        ],
+        axis=1,
+    )
 
-        if len(valid_points) == 0:
-            continue
+    # A marker contributes only if all XYZ coordinates are finite.
+    valid = np.isfinite(data).all(axis=2)
+    count = valid.sum(axis=1)
 
-        if len(valid_points) == 1:
-            result.iloc[i] = valid_points[0]
-            status.iloc[i] = "single_marker"
-        else:
-            result.iloc[i] = valid_points.mean(axis=0)
-            status.iloc[i] = "averaged"
+    # Sum only valid marker coordinates.
+    sums = np.where(valid[:, :, None], data, 0.0).sum(axis=1)
 
-    return result, status, available_markers
+    # Use a separate, writable NumPy array for the division output.
+    averaged = np.full(sums.shape, np.nan, dtype=float)
 
+    np.divide(
+        sums,
+        count[:, None],
+        out=averaged,
+        where=count[:, None] > 0,
+    )
+
+    position = pd.DataFrame(
+        averaged,
+        index=df.index,
+        columns=AXES,
+    )
+
+    status.iloc[count == 1] = "SINGLE"
+    status.iloc[count >= 2] = "ALL"
+
+    return position, status, available_markers
+
+
+# ------------------------------- MAIN FUNCTION -----------------------------------
 def marker_to_kinematic_points(df):
     """
-    Convert marker positions into kinematic points.
+    Convert renamed marker coordinates into kinematic points.
 
-    For normal kinematic points:
-    - all available markers in a frame -> average them
-    - exactly one available marker -> use that marker
-    - no available markers -> NaN
+    Each point has XYZ coordinate columns and a status column.
 
-    P9 is treated specially because, after calculating its position,
-    we also need additional markers to construct its wheel reference frame.
+    Normal points:
+    - ALL: two or more markers contribute to the average.
+    - SINGLE: exactly one marker contributes.
+    - MISSING: no markers contribute.
+
+    Steering:
+    - Keep the three markers individually, without averaging.
+
+    P9:
+    - Calculate wheel centers and reference frames when possible.
+
+    The returned DataFrame stores statuses directly in columns.
+    A summary of expected and available markers is also stored in attrs.
     """
+    mapping_path = DATA_DIR / "marker_maps" / "marker_to_kinematic_points.json"
 
-    with open(
-        DATA_DIR / "marker_maps" / "marker_to_kinematic_points.json",
-        "r",
-    ) as f:
-        marker_groups = json.load(f)
+    with open(mapping_path, encoding="utf-8") as file:
+        marker_groups = json.load(file)
 
     df_new = pd.DataFrame(index=df.index)
-
-    # Wheel reference frames
-    df_new["P9l_F_RF"] = pd.Series(index=df.index, dtype=object)
-    df_new["P9l_R_RF"] = pd.Series(index=df.index, dtype=object)
-
-    # Status of each calculated kinematic point
     point_status = {}
 
-    # -------------------------------------------------------------------------
-    # Calculate all normal kinematic points
-    # -------------------------------------------------------------------------
+    # for each group, get the name of the group and the list of markers
+    for point_name, markers in marker_groups.items():
 
-    for new_marker, markers in marker_groups.items():
+        # Steering markers are individual points, not an averaged group.
+        if point_name == "Steering":
+            for marker in markers:
+                columns = [f"{marker}_{axis}" for axis in AXES]
 
-        position, status, available_markers = _average_marker_group(
-            df,
-            markers,
-        )
+                # If the marker columns exist in df, copy them to df_new; otherwise, fill with NaN.
+                for column in columns:
+                    if column in df.columns:
+                        df_new[column] = df[column].to_numpy(dtype=float)
+                    else:
+                        df_new[column] = np.nan
 
-        for axis in ["X", "Y", "Z"]:
-            df_new[f"{new_marker}_{axis}"] = position[axis]
+                # Store the status for each frame: ALL if the marker is valid, MISSING otherwise.
+                valid = np.isfinite(df_new[columns].to_numpy(dtype=float)).all(axis=1)
+                status = pd.Series(
+                    np.where(valid, "ALL", "MISSING"),
+                    index=df.index,
+                    dtype="string",
+                )
+                df_new[f"{marker}_status"] = status
 
-        point_status[new_marker] = {
+                point_status[marker] = {
+                    "status": status,
+                    "expected_markers": [marker],
+                    "available_markers": (
+                        [marker] if all(c in df.columns for c in columns) else []
+                    ),
+                }
+
+            continue
+
+        # Calculate normal kinematic points, including the initial P9 centers.
+        position, status, available_markers = _average_marker_group(df, markers)
+
+        for axis in AXES:
+            df_new[f"{point_name}_{axis}"] = position[axis]
+
+        df_new[f"{point_name}_status"] = status
+
+        point_status[point_name] = {
             "status": status,
-            "available_markers": available_markers,
             "expected_markers": markers,
+            "available_markers": available_markers,
         }
 
-    # -------------------------------------------------------------------------
-    # Adjust P9 positions and calculate wheel reference frames
-    # -------------------------------------------------------------------------
-
-    def marker_is_valid(row, marker):
-        """Return True if all XYZ coordinates of a marker are valid."""
-
-        columns = [
-            f"{marker}_X",
-            f"{marker}_Y",
-            f"{marker}_Z",
-        ]
-
-        if not all(column in row.index for column in columns):
-            return False
-
-        return not row[columns].isna().any()
-
-    def get_marker_position(row, marker):
-        """Return a marker position as a NumPy array."""
-
-        return np.array([
-            row[f"{marker}_X"],
-            row[f"{marker}_Y"],
-            row[f"{marker}_Z"],
-        ], dtype=float)
-
-    for index in df.index:
-
-        row = df.loc[index]
-        row_new = df_new.loc[index]
-
-        # =====================================================================
-        # FRONT P9
-        # =====================================================================
-
-        if not pd.isna(row_new["P9l_F_X"]):
-
-            required_markers = [
-                FRONT_P9_REFERENCE_MARKER,
-                FRONT_P9_X_MARKERS[0],
-                FRONT_P9_X_MARKERS[1],
-            ]
-
-            if all(
-                marker_is_valid(row, marker)
-                for marker in required_markers
-            ):
-
-                wheel_center = np.array([
-                    row_new["P9l_F_X"],
-                    row_new["P9l_F_Y"],
-                    row_new["P9l_F_Z"],
-                ])
-
-                z_reference = get_marker_position(
-                    row,
-                    FRONT_P9_REFERENCE_MARKER,
-                )
-
-                x_reference_start = get_marker_position(
-                    row,
-                    FRONT_P9_X_MARKERS[0],
-                )
-
-                x_reference_end = get_marker_position(
-                    row,
-                    FRONT_P9_X_MARKERS[1],
-                )
-
-                rf_p9 = _calculate_wheel_reference_frame(
-                    wheel_center,
-                    z_reference,
-                    x_reference_start,
-                    x_reference_end,
-                )
-
-                _update_wheel_center(
-                    df_new,
-                    index,
-                    "P9l_F",
-                    rf_p9,
-                )
-
-        # =====================================================================
-        # REAR P9
-        # =====================================================================
-
-        if not pd.isna(row_new["P9l_R_X"]):
-
-            required_markers = [
-                REAR_P9_REFERENCE_MARKER,
-                REAR_P9_X_MARKERS[0],
-                REAR_P9_X_MARKERS[1],
-            ]
-
-            if all(
-                marker_is_valid(row, marker)
-                for marker in required_markers
-            ):
-
-                wheel_center = np.array([
-                    row_new["P9l_R_X"],
-                    row_new["P9l_R_Y"],
-                    row_new["P9l_R_Z"],
-                ])
-
-                z_reference = get_marker_position(
-                    row,
-                    REAR_P9_REFERENCE_MARKER,
-                )
-
-                x_reference_start = get_marker_position(
-                    row,
-                    REAR_P9_X_MARKERS[0],
-                )
-
-                x_reference_end = get_marker_position(
-                    row,
-                    REAR_P9_X_MARKERS[1],
-                )
-
-                rf_p9 = _calculate_wheel_reference_frame(
-                    wheel_center,
-                    z_reference,
-                    x_reference_start,
-                    x_reference_end,
-                )
-
-                _update_wheel_center(
-                    df_new,
-                    index,
-                    "P9l_R",
-                    rf_p9,
-                )
+    # Update P9 wheel centers and calculate their reference frames.
+    _calculate_p9_wheel_frames(df, df_new)
 
     df_new.attrs["point_status"] = point_status
 
     return df_new
 
-def report_point_quality(df):
-    """
-    Print a summary of how each kinematic point was calculated.
-    """
 
+# ------------------------------- REPORTING -----------------------------------
+def report_point_quality(df):
+    """Print per-point counts for ALL, SINGLE, and MISSING frames."""
     point_status = df.attrs.get("point_status")
 
     if point_status is None:
-        raise ValueError(
-            "No point-status information found in DataFrame."
-        )
+        # Also support DataFrames loaded from a file, where attrs are lost.
+        point_names = [
+            column[:-len("_status")]
+            for column in df.columns
+            if column.endswith("_status")
+            and not column.endswith("_RF_status")
+        ]
+
+        if not point_names:
+            raise ValueError("No point-status columns found in DataFrame.")
+
+        point_status = {
+            point: {
+                "status": df[f"{point}_status"],
+                "expected_markers": [],
+                "available_markers": [],
+            }
+            for point in point_names
+        }
 
     print("\nKinematic point quality:")
     print("-" * 80)
 
     for point, information in point_status.items():
-
         status = information["status"]
-        expected = information["expected_markers"]
-        available = information["available_markers"]
-
         counts = status.value_counts()
 
-        averaged = counts.get("averaged", 0)
-        single = counts.get("single_marker", 0)
-        missing = counts.get("missing", 0)
-
         print(f"{point:15s}")
-        print(f"  expected:  {expected}")
-        print(f"  available: {available}")
+        print(f"  expected:  {information['expected_markers']}")
+        print(f"  available: {information['available_markers']}")
         print(
-            f"  frames: averaged={averaged:5d}, "
-            f"single={single:5d}, "
-            f"missing={missing:5d}"
+            f"  frames: ALL={counts.get('ALL', 0):5d}, "
+            f"SINGLE={counts.get('SINGLE', 0):5d}, "
+            f"MISSING={counts.get('MISSING', 0):5d}"
         )
 
-def report_marker_availability(df, marker_groups):
-    """
-    Report whether each expected marker exists in the dataset and,
-    if it exists, how many frames have valid coordinates.
-    """
+    # Report the independent P9 reference-frame status.
+    for point_name in ("P9l_F", "P9l_R"):
+        column = f"{point_name}_RF_status"
 
-    markers = sorted({
-        marker
-        for group in marker_groups.values()
-        for marker in group
-    })
+        if column in df.columns:
+            counts = df[column].value_counts()
+            print(
+                f"{point_name} reference frames: "
+                f"VALID={counts.get('VALID', 0):5d}, "
+                f"MISSING={counts.get('MISSING', 0):5d}"
+            )
 
-    print("\nMarker availability:")
-    print("-" * 80)
 
-    for marker in markers:
-        columns = [
-            f"{marker}_X",
-            f"{marker}_Y",
-            f"{marker}_Z",
-        ]
-
-        # Marker is not present at all in the DataFrame
-        if not all(column in df.columns for column in columns):
-            print(f"{marker:5s} NOT IN DATASET")
-            continue
-
-        # Marker exists, so check frame-by-frame availability
-        valid = ~df[columns].isna().any(axis=1)
-
-        present = valid.sum()
-        missing = (~valid).sum()
-
-        print(
-            f"{marker:5s} present: {present:5d}/{len(df)} "
-            f"missing: {missing:5d}"
-        )
