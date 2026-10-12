@@ -1,4 +1,5 @@
 import csv
+import numpy as np
 import pandas as pd
 
 
@@ -71,5 +72,31 @@ def read_csv(file_path):
     # converting numerical values
     for column in df.columns:
         df[column] = pd.to_numeric(df[column], errors="coerce")
+
+    return df
+
+def read_processed_csv(file_path):
+    """Load a processed CSV as a DataFrame, restoring stored P9 frame matrices."""
+    df = pd.read_csv(file_path)
+
+    for column in ("P9l_F_RF", "P9l_R_RF"):
+        if column not in df.columns:
+            continue
+
+        def parse_reference_frame(value):
+            if pd.isna(value):
+                return None
+
+            values = np.fromstring(
+                value.replace("[", " ").replace("]", " "),
+                sep=" ",
+            )
+            if values.size != 16 or not np.isfinite(values).all():
+                raise ValueError(
+                    f"Invalid 4x4 reference frame in column '{column}': {value!r}"
+                )
+            return values.reshape(4, 4)
+
+        df[column] = df[column].map(parse_reference_frame)
 
     return df

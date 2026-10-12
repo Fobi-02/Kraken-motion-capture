@@ -2,6 +2,8 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
+RAW_DIR = DATA_DIR / "raw"
+PROCESSED_DIR = DATA_DIR / "processed"
 MARKER_MAP_DIR = DATA_DIR / "marker_maps"
 
 EXPERIMENTS = {
@@ -73,7 +75,24 @@ def get_experiment(name: str) -> tuple[Path, Path]:
     experiment = EXPERIMENTS[name]
 
     # Construct the full paths to the CSV and marker-map files
-    csv_path = DATA_DIR / experiment["csv"]
+    csv_path = DATA_DIR / RAW_DIR / experiment["csv"]
     marker_map_path = MARKER_MAP_DIR / experiment["marker_map"]
 
     return csv_path, marker_map_path
+
+def get_processed_experiment(name: str) -> Path:
+    """Return the CSV of an already processed experiment."""
+    # Check if the experiment name is valid
+    if name not in EXPERIMENTS:
+        available = ", ".join(EXPERIMENTS)
+        raise ValueError(
+            f"Unknown experiment '{name}'. "
+            f"Available experiments: {available}"
+        )
+
+    experiment = EXPERIMENTS[name]
+
+    csv_name = f"{name}_correctedRF.csv"
+    csv_path = PROCESSED_DIR / csv_name
+
+    return csv_path

@@ -50,13 +50,18 @@ def _get_axis_limits(df, points, margin=0.05):
     return tuple(limits)
 
 def _set_axis_limits(ax, axis_limits):
-    """Apply calculated axis limits to a 3D axis."""
+    """Apply the given limits and match the 3D box aspect to their spans."""
 
     (x_min, x_max), (y_min, y_max), (z_min, z_max) = axis_limits
 
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
     ax.set_zlim(z_min, z_max)
+    ax.set_box_aspect((
+        x_max - x_min,
+        y_max - y_min,
+        z_max - z_min,
+    ))
 
 def _label_axes(ax):
     """Configure labels for a 3D plot."""

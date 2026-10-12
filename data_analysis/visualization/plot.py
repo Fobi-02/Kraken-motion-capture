@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("TkAgg")
@@ -28,6 +29,9 @@ def plot_markers_slider(df, step=1):
     # Defining the names and axis limits
     points = _get_point_names(df)
     axis_limits = _get_axis_limits(df, points)
+    triad_length = 0.05 * max(
+        upper - lower for lower, upper in axis_limits
+    )
 
     fig = plt.figure(figsize=(8, 7))
     ax = fig.add_axes(
@@ -41,6 +45,33 @@ def plot_markers_slider(df, step=1):
         row = df.iloc[frame_number]
 
         _plot_points(ax, row, points)
+        for frame_name in ("P9l_F_RF", "P9l_R_RF"):
+            status_column = f"{frame_name}_status"
+            if (
+                frame_name not in row.index
+                or status_column not in row.index
+                or row[status_column] != "VALID"
+            ):
+                continue
+
+            reference_frame = np.asarray(row[frame_name], dtype=float)
+            if reference_frame.shape != (4, 4) or not np.isfinite(reference_frame).all():
+                continue
+
+            origin = reference_frame[:3, 3]
+            for axis_index, color in enumerate(("red", "green", "blue")):
+                direction = reference_frame[:3, axis_index]
+                ax.quiver(
+                    *origin,
+                    *direction,
+                    length=triad_length,
+                    normalize=True,
+                    arrow_length_ratio=0.2,
+                    color=color,
+                    linewidth=2,
+                )
+            ax.text(*origin, frame_name, fontsize=9)
+
         #_plot_connections(ax, row, frame_number)
         _set_axis_limits(ax, axis_limits)
         _label_axes(ax)

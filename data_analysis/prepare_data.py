@@ -18,19 +18,20 @@ def main():
         # Convert to kinematic points, keeping the 3 steering wheel markers
         # We keep also the kinematic points that are mapped with only one marker, just for plotting purposes
         # but we add a flag to understand if they are complete or not
-        df = marker_to_kinematic_points(df_renamed)
+        df_kin = marker_to_kinematic_points(df_renamed)
 
         # find the car reference frame, only with the fixed kinematic points and those with both markers visible (mean over time)
-        T = find_reference_frame(df)
+        T, error = find_reference_frame(df_kin, plot=False)
+        print(file_select, " Total quadratic error: ", error)
 
         # Transform kinematic points to car RF and save to new CSV. We transform all the kin points, also those with only one marker just for plotting
         # aand we keep the flag to understand if they are complete or not
         # we transform also the steering wheel points
-        df_carRF = transform_points_to_car_RF(df, T)
+        df_carRF = transform_points_to_car_RF(df_kin, T)
 
         # Determine steering angle and save to new CSV
-        df_carRF = extract_steering_angle(df_carRF, T)
-        df_carRF.to_csv(f"data/processed/{file_select}_correctedRF.csv", index=False)
+        df= extract_steering_angle(df_carRF)
+        df.to_csv(f"data/processed/{file_select}_correctedRF.csv", index=False)
 
 if __name__ == "__main__":
     main()

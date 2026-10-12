@@ -53,7 +53,7 @@ def steering_angle(P4, P5, P6):
     return steering_angle
 
 
-def extract_steering_angle(df, T):
+def extract_steering_angle(df):
     '''
     Given a dataframe with the kinematic points in the car RF, it computes the steering angle for each frame
     and adds it to the dataframe as a new column
@@ -61,21 +61,16 @@ def extract_steering_angle(df, T):
     df = df.copy()
     df["steering_angle"] = np.nan
 
-    for i, row in df.iterrows():
-        P4 = np.array([row["SW_P4_X"], row["SW_P4_Y"], row["SW_P4_Z"]])
-        P5 = np.array([row["SW_P5_X"], row["SW_P5_Y"], row["SW_P5_Z"]])
-        P6 = np.array([row["SW_P6_X"], row["SW_P6_Y"], row["SW_P6_Z"]])
+    for idx, row in df.iterrows():
+        P4 = np.array([row["p04_X"], row["p04_Y"], row["p04_Z"]])
+        P5 = np.array([row["p05_X"], row["p05_Y"], row["p05_Z"]])
+        P6 = np.array([row["p06_X"], row["p06_Y"], row["p06_Z"]])
 
         if np.any(np.isnan(P4)) or np.any(np.isnan(P5)) or np.any(np.isnan(P6)):
             continue
 
-        # Transform points to car RF
-        P4_carRF = T @ np.append(P4, 1)
-        P5_carRF = T @ np.append(P5, 1)
-        P6_carRF = T @ np.append(P6, 1)
-
         # Compute steering angle
-        angle = steering_angle(P4_carRF[:3], P5_carRF[:3], P6_carRF[:3])
-        df.at[i, "steering_angle"] = angle
+        delta = steering_angle(P4, P5, P6)
+        df.at[idx, "steering_angle"] = delta
 
     return df
