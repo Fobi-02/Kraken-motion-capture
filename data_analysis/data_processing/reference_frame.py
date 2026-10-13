@@ -96,7 +96,8 @@ def find_reference_frame(df, plot=False):
 def transform_points_to_car_RF(df, T):
     """ Transform kinematic points to car RF. We transform all the kin points, also those with only one marker just for plotting
         and we keep the flag to understand if they are complete or not
-        and we transform also the steering wheel points and the reference frame of P9"""
+        and we transform also the steering wheel points and the reference frame of P9.
+        The Euler angles of the front and rear P9 frames are added in radians."""
     df_transformed = df.copy()
     for point in df.columns:
         if point.endswith(("_X", "_Y", "_Z")):
@@ -107,15 +108,50 @@ def transform_points_to_car_RF(df, T):
             df_transformed[point_name + "_Y"] = transformed_coords[:, 1]
             df_transformed[point_name + "_Z"] = transformed_coords[:, 2]
 
-    for frame_column in ("P9l_F_RF", "P9l_R_RF"):
+    for frame_column, suffix in (("P9l_F_RF", "F"), ("P9l_R_RF", "R")):
         if frame_column not in df.columns:
             continue
+
+        angle_columns = (f"delta_{suffix}", f"gamma_{suffix}", f"theta_{suffix}")
+        for angle_column in angle_columns:
+            df_transformed[angle_column] = np.nan
+
         status_column = f"{frame_column}_status"
         for index, reference_frame in df[frame_column].items():
-            if reference_frame is None:
+            if reference_frame is None or (
+                np.isscalar(reference_frame) and np.isnan(reference_frame)
+            ):
                 continue
             if status_column in df.columns and df.at[index, status_column] != "VALID":
                 continue
-            df_transformed.at[index, frame_column] = T @ reference_frame
+
+            transformed_frame = T @ np.asarray(reference_frame, dtype=float)
+            df_transformed.at[index, frame_column] = transformed_frame
+            angles = RF_decomposition(transformed_frame)
+            for angle_column, angle in zip(angle_columns, angles):
+                df_transformed.at[index, angle_column] = angle
 
     return df_transformed
+
+
+def RF_decomposition(T):
+    '''
+    Decomposes a reference frame into Z-X-Y Euler angles in radians.
+    '''
+    T = np.asarray(T, dtype=float)
+    if T.shape != (4, 4):
+        raise ValueError(f"Expected a 4x4 reference frame, got shape {T.shape}.")
+
+    rotation = T[:3, :3]
+    gamma = np.arcsin(np.clip(rotation[2, 1], -1.0, 1.0))
+    cos_gamma = np.cos(gamma)
+
+    if abs(cos_gamma) > 1e-8:
+        delta = np.arctan2(-rotation[0, 1], rotation[1, 1])
+        theta = np.arctan2(-rotation[2, 0], rotation[2, 2])
+    else:
+        # At gimbal lock, choose theta = 0 and recover the combined Z rotation.
+        delta = np.arctan2(rotation[1, 0], rotation[0, 0])
+        theta = 0.0
+
+    return delta, gamma, theta

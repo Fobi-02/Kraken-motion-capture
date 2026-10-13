@@ -26,9 +26,13 @@ def translate(x, y, z):
 
 def rotate(axis, theta):
     """Return a 4x4 rotation matrix."""
-    theta = float(theta)
-    c = np.cos(theta)
-    s = np.sin(theta)
+    if isinstance(theta, sp.Basic):
+        c = sp.cos(theta)
+        s = sp.sin(theta)
+    else:
+        theta = float(theta)
+        c = np.cos(theta)
+        s = np.sin(theta)
     axis = axis.upper()
 
     if axis == "X":
@@ -367,4 +371,3 @@ if __name__ == "__main__":
     plt.show()
 
     #endregion
-
