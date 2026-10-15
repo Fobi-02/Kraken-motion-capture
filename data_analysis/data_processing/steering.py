@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from data_analysis.data_processing.reference_frame import RF_decomposition
 import numpy as np
 
 
@@ -26,7 +26,7 @@ def steering_angle(P4, P5, P6):
     # steering wheel reference frame
     nz = (P4 - Ps) / np.linalg.norm(P4 - Ps)
     ny = (P5 - P6) / np.linalg.norm(P5 - P6)
-    nx = np.cross(ny, nz)
+    nx = np.cross(ny, nz) / np.linalg.norm(np.cross(ny, nz))
     RFsteering = np.array([
         [nx[0], ny[0], nz[0], Ps[0]],
         [nx[1], ny[1], nz[1], Ps[1]],
@@ -34,23 +34,19 @@ def steering_angle(P4, P5, P6):
         [0,     0,     0,     1    ]
     ])
 
-    # steering wheel static reference frame (at delta=0°)
-    nxs = nx
-    nys = np.array([0, 1, 0])
-    nzs = np.cross(nxs, nys)
-    RFstatic = np.array([
-            [nxs[0], nys[0], nzs[0], Ps[0]],
-            [nxs[1], nys[1], nzs[1], Ps[1]],
-            [nxs[2], nys[2], nzs[2], Ps[2]],
-            [0,      0,      0,      1    ]
-        ])
+    # Decomposes R = Ry(angle_y) @ Rz(angle_z) @ Rx(angle_x), in radians.
+    rotation = RFsteering[:3, :3]
+    angle_z = np.arcsin(np.clip(rotation[1, 0], -1.0, 1.0))
+    cos_angle_z = np.cos(angle_z)
 
-    # computing steering angle by solving the equation {RFstatic @ rotate("X", delta) == RFsteering} for delta
-    cos_delta = ( RFstatic[0, 1]*RFsteering[0, 1] + RFstatic[0, 2]*RFsteering[0, 2]) / ( RFstatic[0, 1]**2 + RFstatic[0, 2]**2)
-    sin_delta = (RFstatic[0, 2]*RFsteering[0, 1] -  RFstatic[0, 1]*RFsteering[0, 2]) / ( RFstatic[0, 1]**2 + RFstatic[0, 2]**2)
-    steering_angle = np.arctan2(sin_delta, cos_delta) * 180 / np.pi
-    
-    return steering_angle
+    if abs(cos_angle_z) > 1e-8:
+        angle_y = np.arctan2(-rotation[2, 0], rotation[0, 0])
+        angle_x = np.arctan2(-rotation[1, 2], rotation[1, 1])
+    else:
+        angle_y = np.arctan2(rotation[0, 2], rotation[2, 2])
+        angle_x = 0.0
+
+    return -angle_x
 
 
 def extract_steering_angle(df):

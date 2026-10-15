@@ -27,7 +27,6 @@ def _marker_is_valid(row, marker):
     coordinates = row[columns].to_numpy(dtype=float)
     return np.isfinite(coordinates).all()
 
-
 def _get_marker_position(row, marker):
     """Return a marker's XYZ coordinates, or None if unavailable."""
     if not _marker_is_valid(row, marker):
@@ -35,8 +34,6 @@ def _get_marker_position(row, marker):
 
     columns = [f"{marker}_{axis}" for axis in AXES]
     return row[columns].to_numpy(dtype=float)
-
-
 
 def _calculate_wheel_reference_frame(
     wheel_center,
@@ -87,12 +84,7 @@ def _calculate_wheel_reference_frame(
         [0.0,   0.0,   0.0,   1.0],
     ])
 
-    return transformation @ translate(
-        0,
-        -WHEEL_CENTER_OFFSET,
-        0,
-    )
-
+    return transformation @ translate(0, -WHEEL_CENTER_OFFSET, 0)
 
 def _update_wheel_center(df_new, index, wheel_name, reference_frame):
     """Update wheel-center coordinates and store its reference frame."""
@@ -108,7 +100,6 @@ def _update_wheel_center(df_new, index, wheel_name, reference_frame):
     df_new.at[index, f"{wheel_name}_RF_status"] = "VALID"
 
     return True
-
 
 def _calculate_p9_wheel_frames(df, df_new):
     """
