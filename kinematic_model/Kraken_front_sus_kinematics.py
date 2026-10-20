@@ -107,10 +107,10 @@ def intersection(p1, p2, p3, p4):
 
 class FrontKinematics:
 
-    def __init__(self):
+    def __init__(self, gamma0, delta0):
         # setup
-        self.gamma0 = 0
-        self.delta0 = 0
+        self.gamma0 = gamma0
+        self.delta0 = delta0
         # symbolic variables (wheel and chassis coordinates)
         self.xWl, self.yWl, self.zWl, self.deltaWl, self.gammaWl, self.thetaWl = sp.symbols('xWl yWl zWl deltaWl gammaWl thetaWl')
         self.xWr, self.yWr, self.zWr, self.deltaWr, self.gammaWr, self.thetaWr = sp.symbols('xWr yWr zWr deltaWr gammaWr thetaWr')

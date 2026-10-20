@@ -67,8 +67,16 @@ def find_reference_frame(df, plot=False):
 
     # apply result
     T_opt = transformation_matrix(result.x)
-    error = result.fun
     aligned_points = (T_opt @ measured_points.T).T
+    valid = (
+        np.isfinite(measured_points[:, :3]).all(axis=1)
+        & np.isfinite(ideal_points[:, :3]).all(axis=1)
+    )
+    point_errors = np.linalg.norm(
+        ideal_points[valid, :3] - aligned_points[valid, :3],
+        axis=1,
+    )
+    error = np.mean(point_errors)
 
     # -----------------------------
     # Plot 3D

@@ -22,7 +22,7 @@ def main():
 
         # find the car reference frame, only with the fixed kinematic points and those with both markers visible (mean over time)
         T, error = find_reference_frame(df_kin, plot=False)
-        print(file_select, " Total quadratic error: ", error)
+        print(file_select, " Mean point error (mm): ", error)
 
         # Transform kinematic points to car RF and save to new CSV. We transform all the kin points, also those with only one marker just for plotting
         # aand we keep the flag to understand if they are complete or not

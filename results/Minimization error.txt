@@ -1,0 +1,13 @@
+F-30  Mean point error (mm):  1.0128704641691535
+F-60  Mean point error (mm):  1.0230293837628308
+F-90  Mean point error (mm):  0.9980753199625494
+F-110  Mean point error (mm):  1.0246908816703695
+F0  Mean point error (mm):  1.0050603997835788
+F30  Mean point error (mm):  0.988603030466421
+F60  Mean point error (mm):  0.930544353825231
+F90  Mean point error (mm):  1.0252646731714916
+F110  Mean point error (mm):  1.0180672646974949
+R-2  Mean point error (mm):  1.7963630106640769
+R0  Mean point error (mm):  1.4983230178996443
+R2  Mean point error (mm):  1.8416928602804767
+SW  Mean point error (mm):  2.0358505422145496

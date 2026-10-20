@@ -4,9 +4,12 @@ Script used to study suspension kinematics
 '''
 
 import json
+from pathlib import Path
 import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
+
+KINEMATIC_MODEL_DIR = Path(__file__).resolve().parent
 
 #  _____       _        _   _               __  __       _        _      
 # |  __ \     | |      | | (_)             |  \/  |     | |      (_)     
@@ -103,10 +106,10 @@ def intersection(p1, p2, p3, p4):
 
 class RearKinematics:
 
-    def __init__(self):
+    def __init__(self, gamma0, delta0):
         # setup
-        self.gamma0 = 0
-        self.delta0 = 0
+        self.gamma0 = gamma0
+        self.delta0 = delta0
         # symbolic variables (wheel and chassis coordinates)
         self.xWl, self.yWl, self.zWl, self.deltaWl, self.gammaWl, self.thetaWl = sp.symbols('xWl yWl zWl deltaWl gammaWl thetaWl')
         self.xWr, self.yWr, self.zWr, self.deltaWr, self.gammaWr, self.thetaWr = sp.symbols('xWr yWr zWr deltaWr gammaWr thetaWr')
@@ -126,19 +129,19 @@ class RearKinematics:
         #region Data
         
         # importing vehicle data and suspension points
-        with open("VehicleData.json", "r", encoding="utf-8") as f:
+        with open(KINEMATIC_MODEL_DIR / "VehicleData.json", "r", encoding="utf-8") as f:
             VehicleData = json.load(f)
         globals().update(VehicleData)
 
         # loading different coordinates based on the tierod position selected
         if pos == "center":
-            with open("RearSuspensionPoints.json", "r", encoding="utf-8") as f:
+            with open(KINEMATIC_MODEL_DIR / "RearSuspensionPoints.json", "r", encoding="utf-8") as f:
                 dataKine = json.load(f)
         elif pos == "rear":
-            with open("RearSuspensionPoints-2.json", "r", encoding="utf-8") as f:
+            with open(KINEMATIC_MODEL_DIR / "RearSuspensionPoints-2.json", "r", encoding="utf-8") as f:
                 dataKine = json.load(f)
         elif pos == "front":
-            with open("RearSuspensionPoints+2.json", "r", encoding="utf-8") as f:
+            with open(KINEMATIC_MODEL_DIR / "RearSuspensionPoints+2.json", "r", encoding="utf-8") as f:
                 dataKine = json.load(f)
         globals().update(dataKine)
 

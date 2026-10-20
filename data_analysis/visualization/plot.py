@@ -118,6 +118,8 @@ def plot_model_comparison_slider(
     front_kinematics,
     equations,
     model_coordinates,
+    delta0,
+    gamma0,
     wheel_radius=0.2032,
     sample_step=150,
     slider_step=1,
@@ -126,7 +128,8 @@ def plot_model_comparison_slider(
     """Solve and plot sampled front-left model and motion-capture points.
 
     Returns the sampled DataFrame positions, modeled P9 center positions in
-    meters, and modeled wheel angles in radians.
+    meters, and modeled wheel angles in radians including the initial toe and
+    camber offsets.
     """
     if sample_step < 1:
         raise ValueError("sample_step must be a positive integer.")
@@ -171,8 +174,8 @@ def plot_model_comparison_slider(
             ]
         ).reshape(len(FRONT_MODEL_POINT_NAMES), 3)
         model_angles[row_number] = [
-            float(solution[front_kinematics.deltaWl]),
-            float(solution[front_kinematics.gammaWl]),
+            delta0 + float(solution[front_kinematics.deltaWl]),
+            -gamma0 + float(solution[front_kinematics.gammaWl]),
             float(solution[front_kinematics.thetaWl]),
         ]
         model_rotation = (
@@ -315,7 +318,7 @@ def plot_model_comparison_slider(
 
         _set_axis_limits(ax, axis_limits)
         _label_axes(ax)
-        ax.set_title(f"Frame {df.index[row_position]}: mocap vs modello")
+        ax.set_title(f"Frame {df.index[row_position]}: Mocap vs modello")
         ax.legend(
             handles=[
                 Line2D(
@@ -324,11 +327,11 @@ def plot_model_comparison_slider(
                 ),
                 Line2D(
                     [], [], marker="x", linestyle="None",
-                    color="tab:orange", label="Modello cinematico",
+                    color="tab:orange", label="Kinematic model",
                 ),
                 Line2D(
                     [], [], color="0.45", linestyle=":",
-                    label="Scarto tra punti corrispondenti",
+                    label="Difference between points",
                 ),
                 Line2D(
                     [], [], color="0.25", linestyle="-",
@@ -336,7 +339,7 @@ def plot_model_comparison_slider(
                 ),
                 Line2D(
                     [], [], color="0.25", linestyle="--",
-                    label="Frame P9 modello",
+                    label="Frame P9 model",
                 ),
             ],
             loc="upper left",
@@ -348,7 +351,7 @@ def plot_model_comparison_slider(
     slider_ax = fig.add_axes([0.15, 0.07, 0.70, 0.035])
     slider = Slider(
         ax=slider_ax,
-        label="Campione",
+        label="Frame",
         valmin=0,
         valmax=len(frame_positions) - 1,
         valinit=0,
@@ -418,8 +421,13 @@ def _plot_connections(ax, df, frame_number):
                 f"{point_b}_Z",
             ]
 
+            # Some configured points, such as the aggregate Steering point,
+            # are not available as coordinate columns in every DataFrame.
+            if not all(column in row.index for column in columns):
+                continue
+
             # Don't draw incomplete links.
-            if any(pd.isna(row[column]) for column in columns):
+            if row[columns].isna().any():
                 continue
 
             ax.plot(

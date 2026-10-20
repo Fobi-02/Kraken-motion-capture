@@ -1,0 +1,1 @@
+Mean steering angle: 3.75°

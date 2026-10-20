@@ -8,12 +8,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def main():
-    file_selected = "SW"
+    file_selected = "F0"
     csv_file, json_file = get_experiment(file_selected)
     df_raw = read_csv(csv_file)
     df_renamed = rename_markers(df_raw, json_file)
     df_kin = marker_to_kinematic_points(df_renamed)
-    T, error = find_reference_frame(df_kin, plot=False)
+    T, error = find_reference_frame(df_kin, plot=True)
+    print("Mean point error:", error)
     df_carRF = transform_points_to_car_RF(df_kin, T)
     df= extract_steering_angle(df_carRF)
 
