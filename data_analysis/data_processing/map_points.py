@@ -21,7 +21,7 @@ REAR_P9_REFERENCE_MARKER = "p49"
 REAR_P9_X_MARKERS = ("p50", "p51")
 
 
-# ----------------------------------- UTILITIES -----------------------------------
+# ----------------------------------- UTILITIES ----------------------------------
 def rename_markers(df, json_path):
     """Rename raw marker columns using the JSON mapping."""
     with open(json_path, encoding="utf-8") as file:
@@ -59,8 +59,7 @@ def rename_markers(df, json_path):
     return pd.DataFrame(result_columns, index=df.index)
 
 
-# ------------------------------- AVERAGE KINEMATIC POINTS -----------------------------------
-
+# --------------------------- AVERAGE KINEMATIC POINTS ---------------------------
 def _average_marker_group(df, markers):
     """
     Calculate a kinematic point from its contributing markers.
@@ -122,7 +121,7 @@ def _average_marker_group(df, markers):
     return position, status, available_markers
 
 
-# ------------------------------- MAIN FUNCTION -----------------------------------
+# --------------------------------- MAIN FUNCTION --------------------------------
 def marker_to_kinematic_points(df):
     """
     Convert renamed marker coordinates into kinematic points.
@@ -207,7 +206,7 @@ def marker_to_kinematic_points(df):
     return df_new
 
 
-# ------------------------------- REPORTING -----------------------------------
+# ----------------------------------- REPORTING ----------------------------------
 def report_point_quality(df):
     """Print per-point counts for ALL, SINGLE, and MISSING frames."""
     point_status = df.attrs.get("point_status")

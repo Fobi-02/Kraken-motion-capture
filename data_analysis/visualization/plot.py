@@ -24,7 +24,7 @@ FRONT_MODEL_POINT_NAMES = (
 
 
 def plot_markers(df, frame_number):
-    """Plot marker positions for a single frame."""
+    """Plot marker positions for a single given frame."""
     # Defining the markers and axis limits
     markers = _get_point_names(df)
     axis_limits = _get_axis_limits(df, markers)
@@ -41,7 +41,8 @@ def plot_markers(df, frame_number):
     plt.show()
 
 def plot_markers_slider(df, step=1):
-    """Display kinematic points and their connections with a frame slider."""
+    """Display kinematic points with a frame slider"""
+
     # Defining the names and axis limits
     points = _get_point_names(df)
     axis_limits = _get_axis_limits(df, points)
@@ -122,21 +123,15 @@ def plot_model_comparison_slider(
     gamma0,
     wheel_radius=0.2032,
     sample_step=150,
-    slider_step=1,
-    show=True,
+    slider_step=1
 ):
-    """Solve and plot sampled front-left model and motion-capture points.
+    """Solve and plot sampled front-left kinematic model and motion-capture points.
 
-    Returns the sampled DataFrame positions, modeled P9 center positions in
-    meters, and modeled wheel angles in radians including the initial toe and
-    camber offsets.
+    Returns:
+     - the sampled DataFrame positions
+     - kinematic model P9 center positions in meters
+     - kinematic model wheel angles in radians
     """
-    if sample_step < 1:
-        raise ValueError("sample_step must be a positive integer.")
-    if len(df) == 0:
-        raise ValueError(
-            "Cannot compare model and motion-capture data: DataFrame is empty."
-        )
 
     frame_positions = np.arange(0, len(df), sample_step)
     if frame_positions[-1] != len(df) - 1:
@@ -188,23 +183,6 @@ def plot_model_comparison_slider(
         model_frames[row_number, :3, 3] = model_positions[row_number] * 1000
 
     model_points *= 1000
-
-    expected_points_shape = (len(frame_positions), len(FRONT_MODEL_POINT_NAMES), 3)
-    if model_points.shape != expected_points_shape:
-        raise ValueError(
-            f"Expected model_points shape {expected_points_shape}, "
-            f"got {model_points.shape}."
-        )
-    expected_frames_shape = (len(frame_positions), 4, 4)
-    if model_frames.shape != expected_frames_shape:
-        raise ValueError(
-            f"Expected model_frames shape {expected_frames_shape}, "
-            f"got {model_frames.shape}."
-        )
-    if len(frame_positions) == 0:
-        raise ValueError("At least one model frame is required.")
-    if np.any(frame_positions < 0) or np.any(frame_positions >= len(df)):
-        raise IndexError("A frame position is outside the DataFrame.")
 
     complete_points = np.zeros(
         (len(df), len(FRONT_MODEL_POINT_NAMES)),
@@ -300,7 +278,7 @@ def plot_model_comparison_slider(
                 measured_frame.shape == (4, 4)
                 and np.isfinite(measured_frame).all()
             ):
-                _plot_comparison_triad(
+                _plot_comparison_frame(
                     ax,
                     measured_frame,
                     triad_length,
@@ -309,7 +287,7 @@ def plot_model_comparison_slider(
 
         model_frame = model_frames[sample_index]
         if model_frame.shape == (4, 4) and np.isfinite(model_frame).all():
-            _plot_comparison_triad(
+            _plot_comparison_frame(
                 ax,
                 model_frame,
                 triad_length,
@@ -364,13 +342,12 @@ def plot_model_comparison_slider(
 
     slider.on_changed(update)
     fig._model_comparison_slider = slider
-    if show:
-        plt.show()
 
     return frame_positions, model_positions, model_angles
 
-def _plot_comparison_triad(ax, reference_frame, length, linestyle):
-    """Draw a scaled reference-frame triad, preserving its axis directions."""
+def _plot_comparison_frame(ax, reference_frame, length, linestyle):
+    """Draw a scaled reference-frame"""
+
     origin = reference_frame[:3, 3]
     for axis_index, color in enumerate(("red", "green", "blue")):
         direction = reference_frame[:3, axis_index]

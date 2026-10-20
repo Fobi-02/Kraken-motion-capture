@@ -22,7 +22,7 @@
 
 - [ ] Find GPS positions w.r.t. the car RF
 - [ ] Compare kinematic point positions on the chassis, mean of all the measurments over time to lewer uncertainty
-- [ ] Compare kinematic maps of P9 RF, depending on delta and wheel height
+- [x] Compare kinematic maps of P9 RF, depending on delta and wheel height
  
 ## To fix
 - [x] Add support for other bumpsteer options for rear suspensions kinematics
@@ -30,4 +30,4 @@
 - [x] When transofrming the coordinates in the correct RF also the P9 RF has to be transformed
 - [x] when understanding a joint has only one marker instead of two, we use the position of that marker to get the position of the joint. Clearly this is wrong and we should just remove it
 - [ ] ZANO: map_points.py is full of stuff and needs to be refactored. maybe add an utils.py as done for the plotting
-- [ ] Probably steering angle is inverted - also check steering angle function
+- [x] Probably steering angle is inverted - also check steering angle function

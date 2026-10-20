@@ -8,29 +8,34 @@ from kinematic_model.Kraken_front_sus_kinematics import FrontKinematics
 
 
 def main():
+    # selecting the file to study
     file_select="SW"
     csv_file = get_processed_experiment(file_select)
     df = read_processed_csv(csv_file)
 
-    print("Mean steering angle: ", 180/np.pi*np.mean(df["steering_angle"]))
-
-    # Some statistics and reports on marker availability and point quality
     #plot_markers_slider(df, step=100)
 
     # Plot links for a specific frame
     #plot_links(df, 0)
 
+    # wheel radius in m
     rWheel = 0.2032
     # static toe and camber (rad)
     delta0 = -2*np.pi/180
     gamma0 = -0.5*np.pi/180
+
+    # setting up the kinematic problem
     front_kine = FrontKinematics(gamma0, delta0)
     equations, points = front_kine.set_kinematic_problem()
 
-    # ---------------------------------------------
+    if file_select != "SW":
+        print("Mean steering angle: ", 180/np.pi*np.mean(df["steering_angle"]))
+    
+    # -----------------------------------------------------
     # Compare 3D coordinates between model and measurements
-    # ---------------------------------------------
+    # -----------------------------------------------------
 
+    # plotting the points in 3D and computing the model position equivalent to the given wheel travel and wheel heigth
     sample_positions, model_positions, model_angles = plot_model_comparison_slider(
         df,
         front_kine,
@@ -39,8 +44,7 @@ def main():
         delta0,
         gamma0,
         wheel_radius=rWheel,
-        sample_step=50,
-        show=False,
+        sample_step=50
     )
     sampled_df = df.iloc[sample_positions]
 
@@ -48,14 +52,12 @@ def main():
     position_labels = ("X", "Y", "Z")
     position_colors = ("tab:red", "tab:green", "tab:blue")
 
-    # ----------------------------------------------------
-    # Compare measured and modelled wheel center positions.
-    # ----------------------------------------------------
+    # --------------------------------------------------------------
+    # Compare measured and modelled wheel center positions over time
+    # --------------------------------------------------------------
 
     plt.figure(figsize=(10, 4))
-    for coordinate, label, color in zip(
-        range(3), position_labels, position_colors
-    ):
+    for coordinate, label, color in zip(range(3), position_labels, position_colors):
         plt.plot(
             df.index,
             df[position_columns[coordinate]] / 1000,
@@ -78,10 +80,11 @@ def main():
     plt.legend()
     plt.tight_layout()
 
-    # ---------------------------------------------
-    # Measured distance between P9 and P8. (nominally 117.571mm)
-    # ---------------------------------------------
+    # -------------------------------
+    # Measured suspension link length
+    # -------------------------------
 
+    # kinematic points
     p1 = df[["P1l_F_X", "P1l_F_Y", "P1l_F_Z"]].to_numpy(dtype=float)
     p2 = df[["P2l_F_X", "P2l_F_Y", "P2l_F_Z"]].to_numpy(dtype=float)
     p3 = df[["P3l_F_X", "P3l_F_Y", "P3l_F_Z"]].to_numpy(dtype=float)
@@ -89,6 +92,7 @@ def main():
     p6 = df[["P6l_F_X", "P6l_F_Y", "P6l_F_Z"]].to_numpy(dtype=float)
     p7 = df[["P7l_F_X", "P7l_F_Y", "P7l_F_Z"]].to_numpy(dtype=float)
 
+    # length
     d_p1_p7 = np.linalg.norm(p1 - p7, axis=1)
     d_p2_p7 = np.linalg.norm(p2 - p7, axis=1)
     d_p3_p6 = np.linalg.norm(p3 - p6, axis=1)
@@ -106,16 +110,14 @@ def main():
     plt.legend()
     plt.tight_layout()
 
-    # ---------------------------------------------
-    # Compare measured and modelled wheel angles.
-    # ---------------------------------------------
+    # ------------------------------------------
+    # Compare measured and modelled wheel angles
+    # ------------------------------------------
 
     angle_columns = ("delta_F", "gamma_F", "theta_F")
     angle_labels = ("delta", "gamma", "theta")
     plt.figure(figsize=(10, 4))
-    for coordinate, label, color in zip(
-        range(3), angle_labels, position_colors
-    ):
+    for coordinate, label, color in zip(range(3), angle_labels, position_colors):
         plt.plot(
             df.index,
             180/np.pi*df[angle_columns[coordinate]],
@@ -142,49 +144,48 @@ def main():
     # Compare camber angle against the wheel-travel
     # ---------------------------------------------
 
-    measured_z_wheel = df["P9l_F_Z"].to_numpy(dtype=float) / 1000 - rWheel
-    measured_gamma = df["gamma_F"].to_numpy(dtype=float)
-    valid_measurements = np.isfinite(measured_z_wheel) & np.isfinite(measured_gamma)
-    if "P9l_F_RF_status" in df.columns:
-        valid_measurements &= df["P9l_F_RF_status"].eq("VALID").to_numpy()
+    if file_select != "SW":
 
-    model_z_wheel = (
-        sampled_df["P9l_F_Z"].to_numpy(dtype=float) / 1000 - rWheel
-    )
-    valid_model = np.isfinite(model_z_wheel) & np.isfinite(model_angles[:, 1])
-    model_order = np.argsort(model_z_wheel[valid_model])
+        measured_z_wheel = df["P9l_F_Z"].to_numpy(dtype=float) / 1000 - rWheel
+        measured_gamma = df["gamma_F"].to_numpy(dtype=float)
+        valid_measurements = np.isfinite(measured_z_wheel) & np.isfinite(measured_gamma)
+        if "P9l_F_RF_status" in df.columns:
+            valid_measurements &= df["P9l_F_RF_status"].eq("VALID").to_numpy()
 
-    plt.figure(figsize=(8, 5))
-    plt.scatter(
-        measured_z_wheel[valid_measurements] * 1000,
-        np.degrees(measured_gamma[valid_measurements]),
-        s=8,
-        alpha=0.45,
-        label="Measured",
-    )
-    plt.plot(
-        model_z_wheel[valid_model][model_order] * 1000,
-        np.degrees(model_angles[valid_model, 1][model_order]),
-        color="tab:red",
-        marker="o",
-        markersize=4,
-        label="Kinematic model",
-    )
-    plt.xlabel("z ruota (mm)")
-    plt.ylabel("Camber angle γ (deg)")
-    plt.title(f"Camber gain - {file_select}")
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
+        model_z_wheel = (sampled_df["P9l_F_Z"].to_numpy(dtype=float) / 1000 - rWheel)
+        valid_model = np.isfinite(model_z_wheel) & np.isfinite(model_angles[:, 1])
+        model_order = np.argsort(model_z_wheel[valid_model])
 
-    # ---------------------------------------------
-    # Compare steering behavior
-    # ---------------------------------------------
+        plt.figure(figsize=(8, 5))
+        plt.scatter(
+            measured_z_wheel[valid_measurements] * 1000,
+            np.degrees(measured_gamma[valid_measurements]),
+            s=8,
+            alpha=0.45,
+            label="Measured",
+        )
+        plt.plot(
+            model_z_wheel[valid_model][model_order] * 1000,
+            np.degrees(model_angles[valid_model, 1][model_order]),
+            color="tab:red",
+            marker="o",
+            markersize=4,
+            label="Kinematic model",
+        )
+        plt.xlabel("z wheel (mm)")
+        plt.ylabel("Camber angle (deg)")
+        plt.title(f"Camber gain - {file_select}")
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+
+    # -------------------------------------
+    # Compare steering behavior (Ackermann)
+    # -------------------------------------
 
     if file_select == "SW":
 
         steering_wheel_angle = np.degrees(df["steering_angle"].to_numpy(dtype=float))
-
         wheel_angle = np.degrees(df["delta_F"].to_numpy(dtype=float))
 
         valid_angles = (

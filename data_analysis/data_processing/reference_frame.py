@@ -10,6 +10,8 @@ def transformation_matrix(params):
 
 
 def find_reference_frame(df, plot=False):
+    """ Performs an optimization to find the transformation from the current RF to the nominal RF """
+
     # loading the ideal points
     with open("data/marker_maps/model_positions.json", "r") as f:
         ideal = json.load(f)
@@ -35,9 +37,6 @@ def find_reference_frame(df, plot=False):
         measured_by_name[point_name] = mean_position
         measured_points.append([*mean_position, 1])
         ideal_points.append(ideal[point_name])
-
-    if not measured_points:
-        raise ValueError("No reference points have status 'ALL'.")
 
     measured_points = np.array(measured_points)
     ideal_points = np.array(ideal_points)

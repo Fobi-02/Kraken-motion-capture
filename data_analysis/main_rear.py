@@ -8,20 +8,16 @@ from kinematic_model.Kraken_rear_sus_kinematics import RearKinematics
 
 
 def main(file_select="R2"):
+    # each recorded file has the tierod in a different position
     tie_rod_positions = {
         "R0": "center",
         "R2": "front",
         "R-2": "rear",
     }
-    if file_select not in tie_rod_positions:
-        raise ValueError(
-            f"Unsupported rear experiment {file_select!r}; "
-            f"choose one of {tuple(tie_rod_positions)}."
-        )
+
     csv_file = get_processed_experiment(file_select)
     df = read_processed_csv(csv_file)
 
-    # Some statistics and reports on marker availability and point quality
     #plot_markers_slider(df, step=100)
 
     # Plot links for a specific frame
@@ -34,14 +30,14 @@ def main(file_select="R2"):
     # for R2 use delta0=-4*np.pi/180 and gamma0=0.35*np.pi/180
     delta0 = -4*np.pi/180
     gamma0 = 0.35*np.pi/180
-    rear_kine = RearKinematics(gamma0, delta0)
-    equations, points = rear_kine.set_kinematic_problem(
-        pos=tie_rod_positions[file_select]
-    )
 
-    # ---------------------------------------------
+    # setting up the kinematic problem
+    rear_kine = RearKinematics(gamma0, delta0)
+    equations, points = rear_kine.set_kinematic_problem(pos=tie_rod_positions[file_select])
+
+    # -----------------------------------------------------
     # Compare 3D coordinates between model and measurements
-    # ---------------------------------------------
+    # -----------------------------------------------------
 
     sample_positions = np.arange(0, len(df), 50)
     if sample_positions[-1] != len(df) - 1:
@@ -56,6 +52,7 @@ def main(file_select="R2"):
         if not np.isfinite(wheel_z):
             continue
 
+        # solving the kinematic problem
         solution = rear_kine.solve_kinematics(equations, wheel_z)
         model_positions[sample_index] = [
             float(coordinate.subs(solution))
@@ -72,7 +69,7 @@ def main(file_select="R2"):
     position_colors = ("tab:red", "tab:green", "tab:blue")
 
     # ----------------------------------------------------
-    # Compare measured and modelled wheel center positions.
+    # Compare measured and modelled wheel center positions
     # ----------------------------------------------------
 
     plt.figure(figsize=(10, 4))
@@ -129,9 +126,9 @@ def main(file_select="R2"):
     plt.legend()
     plt.tight_layout()
 
-    # ---------------------------------------------
-    # Compare measured and modelled wheel angles.
-    # ---------------------------------------------
+    # ------------------------------------------
+    # Compare measured and modelled wheel angles
+    # ------------------------------------------
 
     angle_columns = ("delta_R", "gamma_R", "theta_R")
     angle_labels = ("delta", "gamma", "theta")
@@ -193,8 +190,8 @@ def main(file_select="R2"):
         markersize=4,
         label="Kinematic model",
     )
-    plt.xlabel("z ruota (mm)")
-    plt.ylabel("Camber angle γ (deg)")
+    plt.xlabel("z wheel (mm)")
+    plt.ylabel("Camber angle (deg)")
     plt.title(f"Camber gain - {file_select}")
     plt.grid(True, alpha=0.3)
     plt.legend()

@@ -4,9 +4,7 @@ import pandas as pd
 
 
 def read_csv(file_path):
-    """
-    reads a CSV file of the mocap data and returns a dataframe
-    """
+    """ Reads a CSV file of the mocap data and returns a dataframe """
 
     # Read CSV
     with open(file_path, "r", encoding="utf-8-sig", newline="") as f:
@@ -76,7 +74,8 @@ def read_csv(file_path):
     return df
 
 def read_processed_csv(file_path):
-    """Load a processed CSV as a DataFrame, restoring stored P9 frame matrices."""
+    """ Load a processed CSV as a DataFrame, restoring stored P9 frame matrices """
+
     df = pd.read_csv(file_path)
 
     for column in ("P9l_F_RF", "P9l_R_RF"):
