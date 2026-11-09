@@ -5,15 +5,17 @@ from data_analysis.data_processing.map_points import marker_to_kinematic_points,
 from data_analysis.data_processing.read_csv import read_csv
 from data_analysis.data_processing.reference_frame import find_reference_frame, transform_points_to_car_RF
 from data_analysis.data_processing.steering import extract_steering_angle
+from data_analysis.data_processing.filtering import filter_markers
 
 
 def main():
     for file_select in EXPERIMENTS.keys():
         csv_file, json_file = get_experiment(file_select)
         df_raw = read_csv(csv_file)
-
+        #Filter the raw data to remove noise and spikes
+        df_filtered = filter_markers(df_raw, fs=360, cutoff_hz=100)
         # Rename markers and convert to kinematic points
-        df_renamed = rename_markers(df_raw, json_file)
+        df_renamed = rename_markers(df_filtered, json_file)
 
         # Convert to kinematic points, keeping the 3 steering wheel markers
         # We keep also the kinematic points that are mapped with only one marker, just for plotting purposes
