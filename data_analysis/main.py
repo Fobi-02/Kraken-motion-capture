@@ -9,7 +9,7 @@ from kinematic_model.Kraken_front_sus_kinematics import FrontKinematics
 
 def main():
     # selecting the file to study
-    file_select="F0"
+    file_select="SW"
     csv_file = get_processed_experiment(file_select)
     df = read_processed_csv(csv_file)
 
@@ -63,7 +63,7 @@ def main():
             df[position_columns[coordinate]] / 1000,
             color=color,
             linewidth=1.5,
-            label=f"{label} measured",
+            label=f"{label} Measured",
         )
         plt.plot(
             sampled_df.index,
@@ -71,12 +71,12 @@ def main():
             color=color,
             linewidth=1.5,
             linestyle="--",
-            label=f"{label} model",
+            label=f"{label} Model",
         )
     plt.xlabel("Frame")
-    plt.ylabel("Position (m)")
-    plt.title("Measured and modelled wheel center position")
-    plt.grid(True, alpha=0.3)
+    plt.ylabel("Position [m]")
+    #plt.title("Measured and modelled wheel center position")
+    plt.grid(True, alpha=0.4)
     plt.legend()
     plt.tight_layout()
 
@@ -104,9 +104,9 @@ def main():
     plt.plot(df.index, d_p3_p6, color="tab:green", linewidth=1.5, label="P3-P6")
     plt.plot(df.index, d_p4_p6, color="tab:blue", linewidth=1.5, label="P4-P6")
     plt.xlabel("Frame")
-    plt.ylabel("Length (mm)")
-    plt.title("Suspension link length")
-    plt.grid(True, alpha=0.3)
+    plt.ylabel("Length [mm]")
+    #plt.title("Suspension link length")
+    plt.grid(True, alpha=0.4)
     plt.legend()
     plt.tight_layout()
 
@@ -115,7 +115,7 @@ def main():
     # ------------------------------------------
 
     angle_columns = ("delta_F", "gamma_F", "theta_F")
-    angle_labels = ("delta", "gamma", "theta")
+    angle_labels = (r"$\delta_W$", r"$\gamma$", r"$\theta$")
     plt.figure(figsize=(10, 4))
     for coordinate, label, color in zip(range(3), angle_labels, position_colors):
         plt.plot(
@@ -123,7 +123,7 @@ def main():
             180/np.pi*df[angle_columns[coordinate]],
             color=color,
             linewidth=1.5,
-            label=f"{label} measured",
+            label=f"{label} Measured",
         )
         plt.plot(
             sampled_df.index,
@@ -131,12 +131,12 @@ def main():
             color=color,
             linewidth=1.5,
             linestyle="--",
-            label=f"{label} model",
+            label=f"{label} Model",
         )
     plt.xlabel("Frame")
-    plt.ylabel("Angle (deg)")
-    plt.title("Measured and modelled wheel angles")
-    plt.grid(True, alpha=0.3)
+    plt.ylabel("Angle [deg]")
+    #plt.title("Measured and modelled wheel angles")
+    plt.grid(True, alpha=0.4)
     plt.legend()
     plt.tight_layout()
 
@@ -170,12 +170,12 @@ def main():
             color="tab:red",
             marker="o",
             markersize=4,
-            label="Kinematic model",
+            label="Model",
         )
-        plt.xlabel("z wheel (mm)")
-        plt.ylabel("Camber angle (deg)")
-        plt.title(f"Camber gain - {file_select}")
-        plt.grid(True, alpha=0.3)
+        plt.xlabel(r"$\Delta z$ [mm]")
+        plt.ylabel(r"$\gamma$ [deg]")
+        #plt.title(f"Camber gain - {file_select}")
+        plt.grid(True, alpha=0.4)
         plt.legend()
         plt.tight_layout()
 
@@ -219,12 +219,12 @@ def main():
             color="tab:red",
             marker="o",
             markersize=4,
-            label="Kinematic model",
+            label="Model",
         )
-        plt.xlabel("Steering angle (deg)")
-        plt.ylabel("Wheel angle (deg)")
-        plt.title("Ackermann behavior")
-        plt.grid(True, alpha=0.3)
+        plt.xlabel(r"$\delta_D$ [deg]")
+        plt.ylabel(r"$\delta_W$ [deg]")
+        #plt.title("Ackermann behavior")
+        plt.grid(True, alpha=0.4)
         plt.legend()
         plt.tight_layout()
 

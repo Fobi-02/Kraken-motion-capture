@@ -20,8 +20,9 @@
 
 ## Data analysis
 
+- [x] Filter the raw datas
 - [ ] Find GPS positions w.r.t. the car RF
-- [ ] Compare kinematic point positions on the chassis, mean of all the measurments over time to lewer uncertainty
+- [x] Compare kinematic point positions on the chassis, mean of all the measurments over time to lewer uncertainty
 - [x] Compare kinematic maps of P9 RF, depending on delta and wheel height
  
 ## To fix
@@ -29,5 +30,5 @@
 - [x] Add reference frame for p9 -> correct the position along y
 - [x] When transofrming the coordinates in the correct RF also the P9 RF has to be transformed
 - [x] when understanding a joint has only one marker instead of two, we use the position of that marker to get the position of the joint. Clearly this is wrong and we should just remove it
-- [ ] ZANO: map_points.py is full of stuff and needs to be refactored. maybe add an utils.py as done for the plotting
+- [x] ZANO: map_points.py is full of stuff and needs to be refactored. maybe add an utils.py as done for the plotting
 - [x] Probably steering angle is inverted - also check steering angle function

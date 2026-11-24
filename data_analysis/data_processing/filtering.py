@@ -10,9 +10,9 @@ def filter_markers(
     cutoff_hz=10.0,
     order=4,
     despike=True,
-    spike_window=11,
+    spike_window=10,
     spike_n_mad=8.0,
-    spike_floor_mm=0.3,
+    spike_floor_mm=0.1,
     max_gap=10,
     suffixes=("_X", "_Y", "_Z"),
 ):
@@ -23,7 +23,7 @@ def filter_markers(
     - The gaps with NaN, shorter than `max_gap`, are linearly interpolated before filtering;
     - Long gaps stays NaN;
     - Despiking to remove isolated glitches that are due to occlusions and reflections. 
-        Samples that deviate from local median of 11 frames, by more than 8·MAD + 0.3 mm, are replaced by the median
+        Samples that deviate from local median of 10 frames, by more than 8·MAD + 0.1 mm, are replaced by the median
     - Runs too short to be filtered are left as they are.
     """
     # Check Nyquist

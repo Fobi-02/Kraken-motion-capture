@@ -7,7 +7,7 @@ from data_analysis.visualization.plot import plot_markers_slider, plot_links, pl
 from kinematic_model.Kraken_rear_sus_kinematics import RearKinematics
 
 
-def main(file_select="R0"):
+def main(file_select="R-2"):
     # each recorded file has the tierod in a different position
     tie_rod_positions = {
         "R0": "center",
@@ -25,11 +25,15 @@ def main(file_select="R0"):
 
     rWheel = 0.2032
     # static toe and camber (rad)
-    # for R0 use delta0=-2.5*np.pi/180 and gamma0=0.35*np.pi/180
-    # for R-2 use delta0=1*np.pi/180 and gamma0=0.35*np.pi/180
-    # for R2 use delta0=-4*np.pi/180 and gamma0=0.35*np.pi/180
-    delta0 = -2.5*np.pi/180
-    gamma0 = 0.35*np.pi/180
+    if file_select == "R0":
+        delta0 = -2.5*np.pi/180
+        gamma0 = 0.35*np.pi/180
+    elif file_select == "R-2":
+        delta0 = 1*np.pi/180
+        gamma0 = 0.35*np.pi/180
+    elif file_select == "R2":
+        delta0 = -4*np.pi/180
+        gamma0 = 0.35*np.pi/180
 
     # setting up the kinematic problem
     rear_kine = RearKinematics(gamma0, delta0)
@@ -81,7 +85,7 @@ def main(file_select="R0"):
             df[position_columns[coordinate]] / 1000,
             color=color,
             linewidth=1.5,
-            label=f"{label} measured",
+            label=f"{label} Measured",
         )
         plt.plot(
             sampled_df.index,
@@ -89,12 +93,12 @@ def main(file_select="R0"):
             color=color,
             linewidth=1.5,
             linestyle="--",
-            label=f"{label} model",
+            label=f"{label} Model",
         )
     plt.xlabel("Frame")
-    plt.ylabel("Position (m)")
-    plt.title("Measured and modelled wheel center position")
-    plt.grid(True, alpha=0.3)
+    plt.ylabel("Position [m]")
+    #plt.title("Measured and modelled wheel center position")
+    plt.grid(True, alpha=0.4)
     plt.legend()
     plt.tight_layout()
 
@@ -120,9 +124,9 @@ def main(file_select="R0"):
     plt.plot(df.index, d_p3_p6, color="tab:green", linewidth=1.5, label="P3-P6")
     plt.plot(df.index, d_p4_p6, color="tab:blue", linewidth=1.5, label="P4-P6")
     plt.xlabel("Frame")
-    plt.ylabel("Length (mm)")
-    plt.title("Suspension link length")
-    plt.grid(True, alpha=0.3)
+    plt.ylabel("Length [mm]")
+    #plt.title("Suspension link length")
+    plt.grid(True, alpha=0.4)
     plt.legend()
     plt.tight_layout()
 
@@ -131,7 +135,7 @@ def main(file_select="R0"):
     # ------------------------------------------
 
     angle_columns = ("delta_R", "gamma_R", "theta_R")
-    angle_labels = ("delta", "gamma", "theta")
+    angle_labels = (r"$\delta_W$", r"$\gamma$", r"$\theta$")
     plt.figure(figsize=(10, 4))
     for coordinate, label, color in zip(
         range(3), angle_labels, position_colors
@@ -141,7 +145,7 @@ def main(file_select="R0"):
             180/np.pi*df[angle_columns[coordinate]],
             color=color,
             linewidth=1.5,
-            label=f"{label} measured",
+            label=f"{label} Measured",
         )
         plt.plot(
             sampled_df.index,
@@ -149,12 +153,12 @@ def main(file_select="R0"):
             color=color,
             linewidth=1.5,
             linestyle="--",
-            label=f"{label} model",
+            label=f"{label} Model",
         )
     plt.xlabel("Frame")
-    plt.ylabel("Angle (deg)")
-    plt.title("Measured and modelled wheel angles")
-    plt.grid(True, alpha=0.3)
+    plt.ylabel("Angle [deg]")
+    #plt.title("Measured and modelled wheel angles")
+    plt.grid(True, alpha=0.4)
     plt.legend()
     plt.tight_layout()
 
@@ -188,12 +192,12 @@ def main(file_select="R0"):
         color="tab:red",
         marker="o",
         markersize=4,
-        label="Kinematic model",
+        label="Model",
     )
-    plt.xlabel("z wheel (mm)")
-    plt.ylabel("Camber angle (deg)")
-    plt.title(f"Camber gain - {file_select}")
-    plt.grid(True, alpha=0.3)
+    plt.xlabel(r"$\Delta z$ [mm]")
+    plt.ylabel(r"$\gamma$ [deg]")
+    #plt.title(f"Camber gain - {file_select}")
+    plt.grid(True, alpha=0.4)
     plt.legend()
     plt.tight_layout()
     plt.show()
