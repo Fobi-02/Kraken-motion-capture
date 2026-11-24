@@ -13,7 +13,7 @@ def main():
         csv_file, json_file = get_experiment(file_select)
         df_raw = read_csv(csv_file)
         #Filter the raw data to remove noise and spikes
-        df_filtered = filter_markers(df_raw, fs=360, cutoff_hz=100)
+        df_filtered = filter_markers(df_raw, fs=360, cutoff_hz=5)
         # Rename markers and convert to kinematic points
         df_renamed = rename_markers(df_filtered, json_file)
 

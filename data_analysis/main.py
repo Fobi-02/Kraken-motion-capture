@@ -9,7 +9,7 @@ from kinematic_model.Kraken_front_sus_kinematics import FrontKinematics
 
 def main():
     # selecting the file to study
-    file_select="SW"
+    file_select="F0"
     csv_file = get_processed_experiment(file_select)
     df = read_processed_csv(csv_file)
 

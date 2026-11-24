@@ -7,7 +7,7 @@ from data_analysis.visualization.plot import plot_markers_slider, plot_links, pl
 from kinematic_model.Kraken_rear_sus_kinematics import RearKinematics
 
 
-def main(file_select="R2"):
+def main(file_select="R0"):
     # each recorded file has the tierod in a different position
     tie_rod_positions = {
         "R0": "center",
@@ -28,7 +28,7 @@ def main(file_select="R2"):
     # for R0 use delta0=-2.5*np.pi/180 and gamma0=0.35*np.pi/180
     # for R-2 use delta0=1*np.pi/180 and gamma0=0.35*np.pi/180
     # for R2 use delta0=-4*np.pi/180 and gamma0=0.35*np.pi/180
-    delta0 = -4*np.pi/180
+    delta0 = -2.5*np.pi/180
     gamma0 = 0.35*np.pi/180
 
     # setting up the kinematic problem
