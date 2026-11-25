@@ -3,6 +3,8 @@ import pandas as pd
 from scipy import signal
 from scipy.ndimage import median_filter
 
+from data_analysis.data_processing.read_csv import read_csv
+from data_analysis.data_processing.experiment_list import get_experiment
 
 def filter_markers(
     df,
@@ -84,3 +86,61 @@ def filter_markers(
         out[col] = y
 
     return out
+
+def _amplitude_spectrum(x, fs):
+    """Single-sided amplitude spectrum [mm] of a signal (mean removed, Hann window)."""
+    x = pd.Series(x).interpolate(limit_direction="both").to_numpy()
+    x = x - x.mean()
+    w = np.hanning(len(x))
+    amp = 2 * np.abs(np.fft.rfft(x * w)) / w.sum()
+    freqs = np.fft.rfftfreq(len(x), d=1 / fs)
+    return freqs, amp
+
+
+def fourier(df_raw, df_filt, fs=360.0, cutoff_hz=10.0, suffixes=("_X", "_Y", "_Z")):
+    """Plot the amplitude spectrum before/after filtering for a moving and a static marker."""
+    import matplotlib.pyplot as plt
+
+    cols = [c for c in df_raw.columns if str(c).endswith(tuple(suffixes))]
+    std = df_raw[cols].std()
+    examples = {"moving marker": std.idxmax(), "static marker": std.idxmin()}        
+
+    fig, axs = plt.subplots(2, 1, figsize=(8, 8))
+    for ax, (label, col) in zip(axs, examples.items()):
+        f, a_raw = _amplitude_spectrum(df_raw[col].to_numpy(float), fs)
+        _, a_filt = _amplitude_spectrum(df_filt[col].to_numpy(float), fs)
+
+        # Frequency below which 99% / 99.9% of the raw signal energy lies
+        cum = np.cumsum(a_raw**2) / np.sum(a_raw**2)
+        f90, f99, f999 = f[np.searchsorted(cum, 0.90)], f[np.searchsorted(cum, 0.99)], f[np.searchsorted(cum, 0.999)]
+        print(f"{label} ({col}): 90% energy < {f90:.2f} Hz, 99% energy < {f99:.2f} Hz, 99.9% energy < {f999:.2f} Hz")
+
+        ax.semilogx(f[1:], a_raw[1:], lw=1.5, alpha=0.7, label="Raw")
+        ax.semilogx(f[1:], a_filt[1:], lw=2.0, label="Filtered")
+        ax.axvline(cutoff_hz, color="k", ls="--", lw=1, label=f"Cutoff {cutoff_hz:g} Hz")
+        ax.set_xlim(f[1], fs / 2)
+        ax.set_xlabel("frequency [Hz]")
+        ax.set_ylabel("amplitude [mm]")
+        ax.set_title(f"{label}: {col}")
+        ax.grid(alpha=0.3, which="both")
+        ax.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+if __name__ == "__main__":
+    import sys
+
+    # Experiment name from the command line, e.g. `python filter_markers.py SW`
+    experiment = sys.argv[1] if len(sys.argv) > 1 else "SW"
+    cutoff_hz = 10.0
+
+    csv_path, _ = get_experiment(experiment)   # marker map not needed here
+    df_raw = read_csv(csv_path)
+
+    fs = 1 / df_raw["Time"].diff().median()
+    print(f"{experiment}: sampling rate {fs:.1f} Hz")
+
+    df_filt = filter_markers(df_raw, fs=fs, cutoff_hz=cutoff_hz)
+    fourier(df_raw, df_filt, fs=fs, cutoff_hz=cutoff_hz)

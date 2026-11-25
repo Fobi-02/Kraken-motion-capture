@@ -61,11 +61,43 @@ def find_reference_frame(df, plot=False):
         initial_name = "P1l_F" if "P1l_F" in measured_by_name else "P1l_R"
         x0[:3] = np.array(ideal[initial_name]) - initial_point
 
+    # Scaling factors for translations [mm] and rotations [rad] so they have similar magnitudes in the optimization
+    scales = np.array([
+        100.0, 100.0, 100.0,
+        0.1, 0.1, 0.1
+    ])
+
+    # Objective function expressed in scaled variables
+    def scaled_objective(q, measured, ideal):
+        params = scales * q
+        return objective(params, measured, ideal)
+
+    # Initial guess in scaled variables
+    q0 = x0 / scales
+
     # Optimization
-    result = minimize(objective, x0, args=(measured_points, ideal_points), method="BFGS")
+    result = minimize(scaled_objective, q0, args=(measured_points, ideal_points), method="BFGS", jac="3-point", options={"gtol": 1e-4, "maxiter": 2000})
+
+    # Convert optimized parameters back to physical units
+    optimized_params = scales * result.x
+
+    # Check convergence
+    if result.success:
+        print("Optimization converged successfully.")
+    else:
+        print("WARNING: Optimization did not converge.")
+        print(f"Message: {result.message}")
+
+    print(f"Final objective function value: {result.fun:.6f}")
+    print(f"Number of iterations: {result.nit}")
+    print(f"Number of function evaluations: {result.nfev}")
+    print(f"Final gradient infinity norm: {np.linalg.norm(result.jac, ord=np.inf):.6e}")
+    print("Optimized parameters:")
+    print(f"Translation [mm]: {optimized_params[:3]}")
+    print(f"Rotation [rad]: {optimized_params[3:]}")
 
     # apply result
-    T_opt = transformation_matrix(result.x)
+    T_opt = transformation_matrix(optimized_params)
     aligned_points = (T_opt @ measured_points.T).T
     valid = (
         np.isfinite(measured_points[:, :3]).all(axis=1)
